@@ -27,7 +27,7 @@ def create_app(config_filename=None):
     
     # Enable CORS
     CORS(app)
-    
+    print(app.config)
     # MongoDB client setup
     app.mongo_client = MongoClient(app.config["MONGO_URI"])
     app.db = app.mongo_client['notebooks_db']
