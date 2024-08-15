@@ -9,6 +9,12 @@ jwt = JWTManager()
 def create_app(config_filename=None):
     app = Flask(__name__)
 
+    # Initialize JWT
+    jwt.init_app(app)
+    
+    # Enable CORS
+    CORS(app)
+
     # Default config file path
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.py')
     
@@ -22,12 +28,7 @@ def create_app(config_filename=None):
     if config_filename:
         app.config.from_pyfile(config_filename)
     
-    # Initialize JWT
-    jwt.init_app(app)
-    
-    # Enable CORS
-    CORS(app)
-    print(app.config)
+
     # MongoDB client setup
     app.mongo_client = MongoClient(app.config["MONGO_URI"])
     app.db = app.mongo_client['notebooks_db']
