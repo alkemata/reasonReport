@@ -5,4 +5,4 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
-CMD flask --app appmanager run --debug -h 0.0.0.0 -p 5000
+CMD flask --app app run --debug -h 0.0.0.0 -p 5000
