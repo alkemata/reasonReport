@@ -21,6 +21,7 @@ def create_app(config_filename=None):
     # Load the default configuration if the config file exists
     if os.path.exists(config_path):
         app.config.from_pyfile(config_path)
+        print('config loaded')
     else:
         # Optionally, you can log a warning or raise an exception if config file is missing
         app.logger.warning('Config file not found, using default settings')
