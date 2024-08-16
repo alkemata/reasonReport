@@ -1,0 +1,30 @@
+name: Pull Code on Main Branch Commit
+
+# Trigger this workflow on a push to the main branch
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  pull-code:
+    # Run this job on the self-hosted runner
+    runs-on: self-hosted
+
+    steps:
+      # Step 1: Checkout the latest code from the main branch
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Step 2: Run a command to confirm the code is pulled
+      - name: Pull code
+        run: |
+          echo "Pulling the latest code from the main branch"
+          git pull origin main
+
+      # Step 3: (Optional) Perform additional actions, such as building or deploying
+      # For example, you can run a build script:
+      - name: Build Project
+        run: |
+          echo "Building the project..."
+          ./build_script.sh
