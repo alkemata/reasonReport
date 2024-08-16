@@ -26,9 +26,7 @@ def create_app(config_filename=None):
         # Optionally, you can log a warning or raise an exception if config file is missing
         app.logger.warning('Config file not found, using default settings')
 
-    if config_filename:
-        app.config.from_pyfile(config_filename)
-    
+    print(app.config)    
 
     # MongoDB client setup
     app.mongo_client = MongoClient(app.config["MONGO_URI"])
