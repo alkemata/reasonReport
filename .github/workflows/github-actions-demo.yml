@@ -20,11 +20,11 @@ jobs:
       - name: Pull code
         run: |
           echo "Pulling the latest code from the main branch"
-          git pull origin main
+          git pull origin
 
       # Step 3: (Optional) Perform additional actions, such as building or deploying
       # For example, you can run a build script:
       - name: Build Project
         run: |
           echo "Building the project..."
-          ./build_script.sh
+          docker-compose up
