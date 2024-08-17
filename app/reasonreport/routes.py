@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 from flask_jwt_extended import create_access_token
 
-main_blueprint = Blueprint('main', __name__)
+main= Blueprint('main', __name__)
 
 # User authentication info (in-memory for simplicity)
 users = {
@@ -10,14 +10,14 @@ users = {
     "guest": {"password": "guest", "role": "guest"}
 }
 
-@app.route('/')
+@main.route('/')
 def home():
     if 'username' in session:
         return redirect(url_for('dashboard'))
     return render_template('login.html')
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@main.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -34,7 +34,7 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@main.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -50,7 +50,7 @@ def register():
     return render_template('register.html')
 
 
-@app.route('/dashboard')
+@main.route('/dashboard')
 def dashboard():
     if 'username' in session:
         return render_template('dashboard.html', username=session['username'])
@@ -59,12 +59,10 @@ def dashboard():
         return redirect(url_for('login'))
 
 
-@app.route('/logout')
+@main.route('/logout')
 def logout():
     session.pop('username', None)
     flash('You have been logged out', 'info')
     return redirect(url_for('login'))
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
