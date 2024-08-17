@@ -10,6 +10,8 @@ services:
     volumes:
       - mongo-data:/data/db
     command: mongod
+    networks:
+      - default
     
   flaskapp:
     build: .
@@ -25,6 +27,7 @@ services:
       traefik.http.services.flaskapp.loadbalancer.server.port: 5000
     networks:
       - traefik_web
+      - default
     depends_on:
       - mongo
     environment:
