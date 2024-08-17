@@ -3,12 +3,25 @@ from flask_jwt_extended import JWTManager
 from pymongo import MongoClient
 from flask_cors import CORS
 import os
+from user_manager import list_users, create_user, modify_user, delete_user
+
 
 jwt = JWTManager()
 
 def create_app(config_filename=None):
     app = Flask(__name__)
 
+
+
+    @app.shell_context_processor
+    def make_shell_context():
+        return {
+            'list_users': list_users,
+            'create_user': create_user,
+            'modify_user': modify_user,
+            'delete_user': delete_user,
+            'db': mongo.db  # Optional, gives you access to the MongoDB instance
+        }
     # Initialize JWT
     jwt.init_app(app)
     
