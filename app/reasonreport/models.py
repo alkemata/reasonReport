@@ -4,7 +4,7 @@ from pymongo import MongoClient
 bcrypt = Bcrypt()
 
 client = MongoClient('mongodb://mongo:27017/flaskdb')
-db = client.flask
+db = client.flaskdb
 users_collection = db.users
 
 
