@@ -3,8 +3,8 @@ from pymongo import MongoClient
 
 bcrypt = Bcrypt()
 
-client = MongoClient('mongodb://mongo:27017/')
-db = client.flask_auth_db
+client = MongoClient('mongodb://mongo:27017/flaskdb')
+db = client.flask
 users_collection = db.users
 
 
