@@ -5,7 +5,7 @@
     </head>
     <body>
         <h2>Register</h2>
-            <form action="{{ url_for('register') }}" method="POST">
+            <form action="{{ url_for('main.register') }}" method="POST">
                     <label for="username">Username:</label><br>
                             <input type="text" id="username" name="username" required><br>
                                     <label for="password">Password:</label><br>
@@ -14,6 +14,6 @@
                                                             <input type="text" id="invitation_code" name="invitation_code" required><br><br>
                                                                     <input type="submit" value="Register">
                                                                         </form>
-                                                                            <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                                                                            <p>Already have an account? <a href="{{ url_for('main.login') }}">Login here</a></p>
                                                                             </body>
                                                                             </html>
