@@ -1,14 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify
 from flask_jwt_extended import create_access_token
+from .models import authenticate_user, register_user
 
 main= Blueprint('main', __name__)
-
-# User authentication info (in-memory for simplicity)
-users = {
-    "admin": {"password": "admin", "role": "admin"},
-    "user123": {"password": "user123", "role": "user"},
-    "guest": {"password": "guest", "role": "guest"}
-}
 
 @main.route('/')
 def home():
