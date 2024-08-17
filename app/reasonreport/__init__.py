@@ -46,6 +46,6 @@ def create_app(config_filename=None):
             'create_user': create_user,
             'modify_user': modify_user,
             'delete_user': delete_user,
-            'db': mongo.db  # Optional, gives you access to the MongoDB instance
+            'db': app.db  # Optional, gives you access to the MongoDB instance
         }
     return app
