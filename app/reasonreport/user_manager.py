@@ -1,5 +1,5 @@
 from flask import current_app
-from models import bcrypt, users_collection
+from .models import bcrypt, users_collection
 
 def list_users():
     """List all users in the database."""
