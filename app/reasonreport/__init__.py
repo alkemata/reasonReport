@@ -3,7 +3,7 @@ from flask_jwt_extended import JWTManager
 from pymongo import MongoClient
 from flask_cors import CORS
 import os
-from user_manager import list_users, create_user, modify_user, delete_user
+from .user_manager import list_users, create_user, modify_user, delete_user
 
 
 jwt = JWTManager()
@@ -38,7 +38,7 @@ def create_app(config_filename=None):
     
     app.register_blueprint(main_blueprint)
     app.register_blueprint(api_blueprint, url_prefix="/api")
-    
+
     @app.shell_context_processor
     def make_shell_context():
         return {
