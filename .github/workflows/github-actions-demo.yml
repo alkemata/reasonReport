@@ -24,7 +24,4 @@ jobs:
 
       # Step 3: (Optional) Perform additional actions, such as building or deploying
       # For example, you can run a build script:
-      - name: Build Project
-        run: |
-          echo "Building the project..."
-          docker-compose up
+      
