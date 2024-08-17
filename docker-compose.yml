@@ -9,7 +9,7 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
-    command: mongod -verbosity 0
+    command: mongod
     
   flaskapp:
     build: .
