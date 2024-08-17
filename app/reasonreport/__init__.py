@@ -30,7 +30,7 @@ def create_app(config_filename=None):
 
     # MongoDB client setup
     app.mongo_client = MongoClient(app.config["MONGO_URI"])
-    app.db = app.mongo_client['notebooks_db']
+    app.db = app.mongo_client['flaskdb']
     
     # Register Blueprints
     from reasonreport.routes import main
