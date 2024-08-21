@@ -1,40 +1,32 @@
-import json
-from nbformat import v4 as nbf
+import nbformat as nbf
 
-def create_blank_notebook(filename):
-    # Create a new notebook object
-        notebook = nbf.new_notebook()
+def create_notebook_with_labels(cell_labels):
+    # Create a new notebook
+    nb = nbf.v4.new_notebook()
+    
+    # Metadata for the notebook
+    nb.metadata = {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.8"
+        }
+    }
+    
+    # Create text cells with the provided labels
+    for idx, label in enumerate(cell_labels):
+        cell_content = f"## Cell {idx+1}\nThis is text cell labeled: {label}."
+        cell_metadata = {"tags": [f"custom-tag-{idx+1}"]}
+        
+        # Add the cell to the notebook
+        nb.cells.append(nbf.v4.new_markdown_cell(cell_content, metadata=cell_metadata))
+    
+    return nb
 
-            # Add metadata to the notebook
-                notebook.metadata = {
-                        "kernelspec": {
-                                    "name": "python3",
-                                                "display_name": "Python 3"
-                                                        },
-                                                                "language_info": {
-                                                                            "name": "python",
-                                                                                        "version": "3.x"
-                                                                                                }
-                                                                                                    }
-
-                                                                                                        # Add the first cell with a tag
-                        cell1 = nbf.new_code_cell("# This is the first cell with a tag")
-                                                                                                                cell1.metadata['tags'] = ['first_cell']
-
-                                                                                                                    # Add the second cell with a tag
-                                                                                                                        cell2 = nbf.new_code_cell("# This is the second cell with a tag")
-                                                                                                                            cell2.metadata['tags'] = ['second_cell']
-
-                                                                                                                                # Add the third cell with a tag
-                                                                                                                                    cell3 = nbf.new_code_cell("# This is the third cell with a tag")
-                                                                                                                                        cell3.metadata['tags'] = ['third_cell']
-
-                                                                                                                                            # Add the cells to the notebook
-                                                                                                                                                notebook.cells = [cell1, cell2, cell3]
-
-                                                                                                                                                    # Save the notebook as a .ipynb file
-                                                                                                                                                        with open(filename, 'w') as f:
-                                                                                                                                                                json.dump(notebook, f, indent=4)
-
-                                                                                                                                                                # Example usage
-                                                                                                                                                                create_blank_notebook('blank_notebook.ipynb')
+# Usage example
+#cell_labels = ["Label 1", "Label 2", "Label 3"]
+#notebook = create_notebook_with_labels(cell_labels)

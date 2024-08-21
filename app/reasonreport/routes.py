@@ -1,8 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort
 from flask_jwt_extended import create_access_token
 from .models import authenticate_user, register_user
+from pymongo import MongoClient
+import nbformat
+from nbconvert import HTMLExporter
 
 main= Blueprint('main', __name__)
+db=main.db
 
 @main.route('/')
 def home():
@@ -58,5 +62,35 @@ def logout():
     session.pop('username', None)
     flash('You have been logged out', 'info')
     return redirect(url_for('login'))
+
+
+
+
+
+# Route to display a Jupyter notebook
+@main.route('/notebook/<notebook_id>')
+def show_notebook(notebook_id):
+    # Fetch the notebook from the database
+    notebook = db.notebooks.find_one({'_id': notebook_id})
+
+    if notebook is None:
+        abort(404)  # If notebook not found, return 404 page
+
+    # Assuming your notebook is stored in JSON format under 'content'
+    nb_content = notebook.get('content')
+
+    if not nb_content:
+        abort(404)  # If notebook content is empty or invalid, return 404 page
+
+    # Load notebook content as a notebook node
+    nb_node = nbformat.reads(nb_content, as_version=4)
+
+    # Convert notebook to HTML using nbconvert
+    html_exporter = HTMLExporter()
+    (body, resources) = html_exporter.from_notebook_node(nb_node)
+
+    # Render the HTML with the title and body of the notebook
+    return render_template('notebook.html', title=notebook.get('title'), body=body)
+
 
 

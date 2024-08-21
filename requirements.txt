@@ -3,3 +3,5 @@ pymongo
 flask-cors
 Flask-JWT-Extended 
 flask-bcrypt
+nbconvert
+nbformat
