@@ -74,7 +74,7 @@ def show_notebook(notebook_id):
     notebook = db.notebooks.find_one({'_id': notebook_id})
 
     if notebook is None:
-        abort(404)  # If notebook not found, return 404 page
+        flash('There is no notebook here! You can create one.')  # If notebook not found, return 404 page
 
     # Assuming your notebook is stored in JSON format under 'content'
     nb_content = notebook.get('content')
