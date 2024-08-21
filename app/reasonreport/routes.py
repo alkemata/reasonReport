@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort, current_ap
 from flask_jwt_extended import create_access_token
 from .models import authenticate_user, register_user
 from pymongo import MongoClient
@@ -6,7 +6,6 @@ import nbformat
 from nbconvert import HTMLExporter
 
 main= Blueprint('main', __name__)
-db=main.db
 
 @main.route('/')
 def home():
@@ -70,6 +69,7 @@ def logout():
 # Route to display a Jupyter notebook
 @main.route('/notebook/<notebook_id>')
 def show_notebook(notebook_id):
+    db=current_app.db
     # Fetch the notebook from the database
     notebook = db.notebooks.find_one({'_id': notebook_id})
 
