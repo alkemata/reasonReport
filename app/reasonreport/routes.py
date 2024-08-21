@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort, current_ap
+from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort, current_app
 from flask_jwt_extended import create_access_token
 from .models import authenticate_user, register_user
 from pymongo import MongoClient
