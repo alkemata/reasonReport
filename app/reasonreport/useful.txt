@@ -3,3 +3,6 @@ mongosh
 use flaskdb
 show collections
 db.users.find()
+
+create shared network
+docker network create shared_network
