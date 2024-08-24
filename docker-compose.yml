@@ -38,7 +38,7 @@ networks:
   traefik_web:
     external: true
   jup_default:
-    external:true
+    external: true
 
 volumes:
   mongo-data:
