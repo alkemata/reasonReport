@@ -27,7 +27,7 @@ services:
       traefik.http.services.flaskapp.loadbalancer.server.port: 5000
     networks:
       - traefik_web
-      - default
+      - jupdefault
     depends_on:
       - mongo
     environment:
@@ -39,7 +39,7 @@ networks:
     external: true
 
 networks:
-  default:
+  jup_default:
     driver: bridge
 
 volumes:
