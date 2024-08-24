@@ -38,5 +38,9 @@ networks:
   traefik_web:
     external: true
 
+networks:
+  default:
+    driver: bridge
+
 volumes:
   mongo-data:
