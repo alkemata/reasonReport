@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+ <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ title }}</title>
 </head>
 <body>
+    <pre>{{ debug() }}</pre>
     <h1>{{ title }}</h1>
     <p>Logged in as: {{ user_name }}</p>
 
@@ -17,7 +18,7 @@
     {% endif %}
 
     <div>
-        <iframe src="http://jupyterlite:8000" class="iframe-container", id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"></iframe>
+        <iframe src="http://jupyterliteapp:8000" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"></iframe>
     </div>
 
     <script>

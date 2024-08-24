@@ -10,7 +10,7 @@ jwt = JWTManager()
 
 def create_app(config_filename=None):
     app = Flask(__name__)
-
+    app.jinja_env.add_extension('jinja2.ext.debug')
     # Initialize JWT
     jwt.init_app(app)
     
