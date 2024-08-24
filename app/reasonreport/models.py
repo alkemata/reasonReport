@@ -12,10 +12,7 @@ users_collection = db.users
 notebooks_collection = db.notebooks
 
 
-def register_user(username, password, invitation_code):
-    # Check if the invitation code is valid
-    if invitation_code not in Config.INVITATION_CODES:
-        return False, "Invalid invitation code"
+def register_user(username, password):
 
     # Check if username is already taken
     existing_user = users_collection.find_one({"username": username})
