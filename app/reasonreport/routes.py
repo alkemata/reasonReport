@@ -120,6 +120,7 @@ def edit_notebook(notebook_id):
     # Get the current user's identity (assuming it is the ID)
     if 'username' in session:
     # Set the JWT token as an HttpOnly cookie
+        print('=================== ok')
         response = render_template('edit.html', title="Edit notebook",is_author=True,notebook_id=notebook_id, user_name=session['username'])
         return response
 
