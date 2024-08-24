@@ -119,7 +119,7 @@ def create_notebook():
 @main.route('/edit/<notebook_id>')
 @login_required
 @jwt_required()
-def edit_notebook(doc_id):$
+def edit_notebook(doc_id):
     # Get the current user's identity (assuming it is the ID)
     user_id = get_jwt_identity()
     
