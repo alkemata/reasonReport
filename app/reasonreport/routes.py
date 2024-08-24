@@ -7,7 +7,6 @@ from nbconvert import HTMLExporter
 from .notebooks import create_rr_notebook
 
 main= Blueprint('main', __name__)
-jwt = JWTManager(app)
 
 @main.route('/')
 def home():
