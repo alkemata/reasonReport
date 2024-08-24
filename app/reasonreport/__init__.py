@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_jwt_extended import JWTManager
-from flask_login import LoginManager
 from pymongo import MongoClient
 from flask_cors import CORS
 import os
@@ -15,9 +14,6 @@ def create_app(config_filename=None):
     # Initialize JWT
     jwt.init_app(app)
     
-    # Configure Flask-Login
-    login_manager = LoginManager()
-    login_manager.init_app(app)
     
     # Enable CORS
     CORS(app)

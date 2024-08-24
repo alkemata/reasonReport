@@ -1,6 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort, current_app
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-from flask_login import current_user, login_required
 from .models import authenticate_user, register_user, create_notebook, update_notebook, get_notebook
 from pymongo import MongoClient
 import nbformat
@@ -110,7 +109,6 @@ def notebook(notebook_id):
                             user_name=username)
 
 @main.route('/create')
-@login_required
 def create_notebook():
     new_notebook=create_rr_notebook()
     notebook_id=create_notebook(new_notebook)
@@ -118,7 +116,6 @@ def create_notebook():
 
 
 @main.route('/edit/<notebook_id>')
-@login_required
 @jwt_required()
 def edit_notebook(notebook_id):
     # Get the current user's identity (assuming it is the ID)
