@@ -53,7 +53,7 @@ def register():
         success, message = register_user(username, password)
         if success:
             flash(message, 'success')
-            return redirect(url_for('login'))
+            return redirect(url_for('main.login'))
         else:
             flash(message, 'danger')
 
