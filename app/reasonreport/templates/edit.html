@@ -23,16 +23,14 @@
     </div>
 
     <script>
-        // Get the JWT token and user ID from the server-rendered variables
-        const jwtToken = "{{ token }}";
-        const documentId = "{{ document_id }}";
+          const documentId = "{{ notebook_id }}";
 
         const iframe = document.getElementById('jupyterlite-iframe');
 
         // Ensure the iframe is loaded before sending the message
         iframe.onload = function () {
             // Use postMessage to send data to the iframe
-            iframe.contentWindow.postMessage({ token: jwtToken, documentId: documentId }, 'http://jupyterliteapp:8000');
+            iframe.contentWindow.postMessage({  documentId: documentId }, 'http://jupyterliteapp:8000');
         };
     </script>
 </body>
