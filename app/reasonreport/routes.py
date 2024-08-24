@@ -116,7 +116,6 @@ def create_notebook_page():
 
 
 @main.route('/edit/<notebook_id>')
-@jwt_required()
 def edit_notebook(notebook_id):
     # Get the current user's identity (assuming it is the ID)
     user_id = get_jwt_identity()
@@ -131,7 +130,6 @@ def edit_notebook(notebook_id):
 
 
 @main.route('/api/notebooks/<id>', methods=['GET'])
-@jwt_required()
 def get_api_notebook(id):
     with current_app.app_context():
         current_user = get_jwt_identity()
