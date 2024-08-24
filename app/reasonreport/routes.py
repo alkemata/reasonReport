@@ -128,7 +128,7 @@ def edit_notebook(doc_id):
     return render_template('edit.html', doc_id=doc_id,token=token, user_id=user_id)
 
 
-@app.route('/api/notebooks/<id>', methods=['GET'])
+@main.route('/api/notebooks/<id>', methods=['GET'])
 @jwt_required()
 def get_api_notebook(id):
     current_user = get_jwt_identity()
