@@ -43,7 +43,7 @@ def get_user_by_username(username):
 
 def create_notebook(data):
     try:
-        result = mongo.db.notebooks.insert_one(data)
+        result = db.notebooks.insert_one(data)
         return {'id': str(result.inserted_id)}, 201
     except Exception as e:
         return {'error': str(e)}, 500
