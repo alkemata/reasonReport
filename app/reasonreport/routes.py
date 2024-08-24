@@ -112,7 +112,7 @@ def notebook(notebook_id):
 def create_notebook_page():
     new_notebook=create_rr_notebook()
     notebook_id=create_notebook(new_notebook)
-    return redirect(url_for('main.edit_notebook', notebook_id=notebook_id))
+    return redirect(url_for('main.edit_notebook', notebook_id=notebook_id[0]['id']))
 
 
 @main.route('/edit/<notebook_id>')
