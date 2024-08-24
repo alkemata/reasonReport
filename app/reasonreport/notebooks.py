@@ -27,6 +27,9 @@ def create_notebook_with_labels(cell_labels):
     
     return nb
 
+def create_rr_notebook():
+    return create_notebook_with_labels({'title','author','summary'})
+
 # Usage example
 #cell_labels = ["Label 1", "Label 2", "Label 3"]
 #notebook = create_notebook_with_labels(cell_labels)

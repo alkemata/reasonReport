@@ -1,11 +1,13 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort, current_app
-from flask_jwt_extended import create_access_token
-from .models import authenticate_user, register_user
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from .models import authenticate_user, register_user, create_notebook, update_notebook, get_notebook
 from pymongo import MongoClient
 import nbformat
 from nbconvert import HTMLExporter
+from .notebooks import create_rr_notebook
 
 main= Blueprint('main', __name__)
+jwt = JWTManager(app)
 
 @main.route('/')
 def home():
@@ -24,7 +26,18 @@ def login():
         if success:
             session['username'] = user['username']
             flash('Login successful', 'success')
-            return redirect(url_for('dashboard'))
+                # Generate the JWT token
+            access_token = create_access_token(identity=username)
+
+                # Redirect to the main page
+            response = redirect(url_for('home'))
+
+                # Attach the JWT token to the response headers or JSON
+            response.headers['Authorization'] = f"Bearer {access_token}"
+            response.set_cookie('token', access_token)
+
+            return response
+
         else:
             flash('Invalid credentials', 'danger')
 
@@ -47,10 +60,10 @@ def register():
     return render_template('register.html')
 
 
-@main.route('/dashboard')
+@main.route('/home')
 def dashboard():
     if 'username' in session:
-        return render_template('dashboard.html', username=session['username'])
+        return render_template('home.html', username=session['username'])
     else:
         flash('You need to login first', 'danger')
         return redirect(url_for('login'))
@@ -68,29 +81,62 @@ def logout():
 
 # Route to display a Jupyter notebook
 @main.route('/notebook/<notebook_id>')
-def show_notebook(notebook_id):
-    db=current_app.db
-    # Fetch the notebook from the database
-    notebook = db.notebooks.find_one({'_id': notebook_id})
+@login_required
+def notebook(notebook_id):
+    db = current_app.db
+    notebook = db.notebooks.find_one({'_id': ObjectId(notebook_id)})
 
+    # If no notebook is found, display a message
     if notebook is None:
-        flash('There is no notebook here! You can create one.')  # If notebook not found, return 404 page
+        # If the notebook doesn't exist, show a message
+        body = "No notebook with this ID exists yet. You can create one."
+        is_author = False  # Assuming they can't be an author of a non-existent notebook
+    else:
+        # If a notebook exists, process its content
+        nb_content = notebook.get('content')
+        nb_node = nbformat.reads(nb_content, as_version=4)
+        html_exporter = HTMLExporter()
+        body, _ = html_exporter.from_notebook_node(nb_node)
 
-    # Assuming your notebook is stored in JSON format under 'content'
-    nb_content = notebook.get('content')
+        # Check if the current user is the author
+        is_author = notebook.get('author_id') == current_user.get_id()
 
-    if not nb_content:
-        abort(404)  # If notebook content is empty or invalid, return 404 page
+    # Render the template with the notebook content or the message
+    return render_template('notebook.html', 
+                           body=body, 
+                           is_author=is_author, 
+                           notebook_id=notebook_id, 
+                           user_name=current_user.username)
 
-    # Load notebook content as a notebook node
-    nb_node = nbformat.reads(nb_content, as_version=4)
-
-    # Convert notebook to HTML using nbconvert
-    html_exporter = HTMLExporter()
-    (body, resources) = html_exporter.from_notebook_node(nb_node)
-
-    # Render the HTML with the title and body of the notebook
-    return render_template('notebook.html', title=notebook.get('title'), body=body)
+@main.route('/create')
+@login_required
+def create_notebook():
+    new_notebook=create_rr_notebook()
+    id=create_notebook(new_notebook)
+    return redirect(url_for('main.edit', notebook_id=notebook_id))
 
 
+@main.route('/edit/<notebook_id>')
+@login_required
+@jwt_required()
+def edit_notebook(doc_id):$
+    # Get the current user's identity (assuming it is the ID)
+    user_id = get_jwt_identity()
+    
+    # Generate the JWT token for further communication
+    token = create_access_token(identity=user_id)
+    return render_template('edit.html', doc_id=doc_id,token=token, user_id=user_id)
 
+
+@app.route('/api/notebooks/<id>', methods=['GET'])
+@jwt_required()
+def get_api_notebook(id):
+    current_user = get_jwt_identity()
+    notebooks = mongo.db.notebooks
+
+    notebook = notebooks.find_one({"_id": ObjectId(id)})
+
+    if not notebook:
+        return jsonify({"msg": "Notebook not found"}), 404
+
+    return notebook, 200

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <p>Logged in as: {{ user_name }}</p>
+
+    <!-- Display either the Edit or Comment button based on user role -->
+    {% if is_author %}
+        <form action="{{ url_for('main.edit_notebook', notebook_id=notebook_id) }}" method="GET">
+            <button type="submit">Publish Notebook</button>
+        </form>
+    {% else %}
+
+    {% endif %}
+
+    <div>
+        <iframe src="http://jupyterlite:8000" class="iframe-container", id="jupyterlite-iframe"></iframe>
+    </div>
+
+    <script>
+        // Get the JWT token and user ID from the server-rendered variables
+        const jwtToken = "{{ token }}";
+        const documentId = "{{ document_id }}";
+
+        const iframe = document.getElementById('jupyterlite-iframe');
+
+        // Ensure the iframe is loaded before sending the message
+        iframe.onload = function () {
+            // Use postMessage to send data to the iframe
+            iframe.contentWindow.postMessage({ token: jwtToken, documentId: documentId }, 'http://jupyterliteapp:8000');
+        };
+    </script>
+</body>
+</html>
