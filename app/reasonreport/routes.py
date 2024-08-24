@@ -34,7 +34,7 @@ def login():
 
                 # Attach the JWT token to the response headers or JSON
             response.headers['Authorization'] = f"Bearer {access_token}"
-            response.set_cookie('token', access_token)
+            response.set_cookie('token', access_token,httponly=True, secure=True, samesite='None')
 
             return response
 

@@ -5,7 +5,7 @@ from bson import ObjectId
 api_blueprint = Blueprint('api', __name__)
 
 @api_blueprint.route('/notebooks', methods=['GET'])
-@jwt_required()
+@jwt_required(locations=['cookies'])
 def get_notebooks():
     current_user = get_jwt_identity()
     db = request.app.db
@@ -23,7 +23,7 @@ def get_notebooks():
     return jsonify(result), 200
 
 @api_blueprint.route('/notebooks', methods=['POST'])
-@jwt_required()
+@jwt_required(locations=['cookies'])
 def create_notebook():
     current_user = get_jwt_identity()
     role = current_user.get("role")
@@ -38,7 +38,7 @@ def create_notebook():
     return jsonify({"msg": "Notebook created", "id": str(result.inserted_id)}), 201
 
 @api_blueprint.route('/notebooks/<notebook_id>', methods=['PUT'])
-@jwt_required()
+@jwt_required(locations=['cookies'])
 def update_notebook(notebook_id):
     current_user = get_jwt_identity()
     role = current_user.get("role")
@@ -53,7 +53,7 @@ def update_notebook(notebook_id):
     return jsonify({"msg": "Notebook updated"}), 200
 
 @api_blueprint.route('/notebooks/<notebook_id>', methods=['DELETE'])
-@jwt_required()
+@jwt_required(locations=['cookies'])
 def delete_notebook(notebook_id):
     current_user = get_jwt_identity()
     role = current_user.get("role")
