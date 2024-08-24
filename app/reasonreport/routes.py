@@ -118,14 +118,9 @@ def create_notebook_page():
 @main.route('/edit/<notebook_id>')
 def edit_notebook(notebook_id):
     # Get the current user's identity (assuming it is the ID)
-    user_id = get_jwt_identity()
-    
-    # Generate the JWT token for further communication
-    token = create_access_token(identity=user_id)
+     if 'username' in session:
     # Set the JWT token as an HttpOnly cookie
-    response = render_template('edit.html', notebook_id=notebook_id, user_id=user_id)
-    response.set_cookie('token', token, httponly=True, secure=True)
-
+        response = render_template('edit.html', notebook_id=notebook_id, user_id=session['username'])
     return response
 
 
