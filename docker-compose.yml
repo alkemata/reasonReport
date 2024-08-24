@@ -37,8 +37,6 @@ services:
 networks:
   traefik_web:
     external: true
-
-networks:
   jup_default:
     driver: bridge
 
