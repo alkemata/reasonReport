@@ -121,7 +121,7 @@ def edit_notebook(notebook_id):
      if 'username' in session:
     # Set the JWT token as an HttpOnly cookie
         response = render_template('edit.html', notebook_id=notebook_id, user_id=session['username'])
-    return response
+        return response
 
 
 @main.route('/api/notebooks/<id>', methods=['GET'])
