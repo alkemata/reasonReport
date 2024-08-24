@@ -11,7 +11,7 @@
 
  
     <div>
-        <iframe src="https://jupyterlite.alkemata.com:8000" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"   width="100%" height="500px"></iframe>
+        <iframe src="https://jupyterlite.alkemata.com" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"   width="100%" height="500px"></iframe>
     </div> -->
 
     <script>
@@ -22,7 +22,7 @@
         // Ensure the iframe is loaded before sending the message
         iframe.onload = function () {
             // Use postMessage to send data to the iframe
-            iframe.contentWindow.postMessage({  documentId: documentId }, 'https://jupyterlite.alkemata.com:8000');
+            iframe.contentWindow.postMessage({  documentId: documentId }, 'https://jupyterlite.alkemata.com');
         };
     </script>
 </body>
