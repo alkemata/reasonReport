@@ -1,0 +1,5 @@
+docker-compose exec mongo sh
+mongosh
+use flaskdb
+show collections
+db.users.find()

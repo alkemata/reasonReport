@@ -10,11 +10,11 @@
     <p>Logged in as: {{ user_name }}</p>
 
  
-<!--     <div>
+    <div>
         <iframe src="http://jupyterliteapp:8000" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"></iframe>
     </div> -->
 
-<!--     <script>
+    <script>
           const documentId = "{{ notebook_id }}";
 
         const iframe = document.getElementById('jupyterlite-iframe');
@@ -24,6 +24,6 @@
             // Use postMessage to send data to the iframe
             iframe.contentWindow.postMessage({  documentId: documentId }, 'http://jupyterliteapp:8000');
         };
-    </script> -->
+    </script>
 </body>
 </html>
