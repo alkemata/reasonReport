@@ -9,7 +9,7 @@ bcrypt = Bcrypt()
 client = MongoClient('mongodb://mongo:27017/flaskdb')
 db = client.flaskdb
 users_collection = db.users
-notebooks_collection = mongo.db.notebooks
+notebooks_collection = db.notebooks
 
 
 def register_user(username, password, invitation_code):
