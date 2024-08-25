@@ -18,7 +18,7 @@
           const documentId = "{{ notebook_id }}";
 
         const iframe = document.getElementById('jupyterlite-iframe');
-
+        console.log('parent: waiting for readiness')
         // Ensure the iframe is loaded before sending the message
         iframe.onload = function () {
             window.addEventListener('message', function(event) {
