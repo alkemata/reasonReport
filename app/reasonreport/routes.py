@@ -128,8 +128,8 @@ def edit_notebook(notebook_id):
 @jwt_required(locations=['cookies'])
 def get_api_notebook(id):
     with current_app.app_context():
-        
-        notebook = notebooks.find_one({"_id": ObjectId(id)})
+        db = request.app.db
+        notebook = db.notebooks.find_one({"_id": ObjectId(id)})
 
         if not notebook:
             return jsonify({"msg": "Notebook not found"}), 404
