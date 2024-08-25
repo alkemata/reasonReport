@@ -30,7 +30,7 @@ def login():
             access_token = create_access_token(identity=username)
 
                 # Redirect to the main page
-            response = redirect(url_for('main.create'))
+            response = redirect(url_for('main.create_notebook_page'))
 
                 # Attach the JWT token to the response headers or JSON
             response.headers['Authorization'] = f"Bearer {access_token}"
