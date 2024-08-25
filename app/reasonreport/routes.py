@@ -131,7 +131,7 @@ def get_api_notebook(id):
         if not notebook:
             return jsonify({"msg": "Notebook not found"}), 404
 
-        return jsonify(notebook['$set']), 200
+        return jsonify(notebook), 200
 
 
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
