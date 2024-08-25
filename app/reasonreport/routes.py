@@ -66,14 +66,14 @@ def dashboard():
         return render_template('home.html', username=session['username'])
     else:
         flash('You need to login first', 'danger')
-        return redirect(url_for('login'))
+        return redirect(url_for('main.login'))
 
 
 @main.route('/logout')
 def logout():
     session.pop('username', None)
     flash('You have been logged out', 'info')
-    return redirect(url_for('login'))
+    return redirect(url_for('main.login'))
 
 
 # Route to display a Jupyter notebook
