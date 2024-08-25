@@ -128,8 +128,6 @@ def edit_notebook(notebook_id):
 @jwt_required(locations=['cookies'])
 def get_api_notebook(id):
     with current_app.app_context():
-        current_user = get_jwt_identity()
-        print(current_user)
         
         notebook = notebooks.find_one({"_id": ObjectId(id)})
 
