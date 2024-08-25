@@ -77,7 +77,7 @@ def logout():
 @main.route('/notebook/<notebook_id>')
 def notebook(notebook_id):
     with current_app.app_context():
-        notebook = notebooks.find_one({'_id': ObjectId(notebook_id)})
+        notebook = app.db.notebooks.find_one({'_id': ObjectId(notebook_id)})
 
         # If no notebook is found, display a message
         if notebook is None:
@@ -125,8 +125,7 @@ def edit_notebook(notebook_id):
 @jwt_required(locations=['cookies'])
 def get_api_notebook(id):
     with current_app.app_context():
-        print('---------- looking in database')
-        db = request.app.db
+
         notebook = db.notebooks.find_one({"_id": ObjectId(id)})
 
         if not notebook:
