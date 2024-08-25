@@ -32,8 +32,8 @@ def login():
 
                 # Redirect to the main page
             response = redirect(url_for('main.create_notebook_page'))
-
-            return jsonify(access_token=access_token)
+            set_access_cookies(resp, access_token)
+            return response
 
         else:
             flash('Invalid credentials', 'danger')
