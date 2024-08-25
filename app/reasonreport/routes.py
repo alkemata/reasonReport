@@ -126,7 +126,7 @@ def edit_notebook(notebook_id):
 def get_api_notebook(id):
     with current_app.app_context():
 
-        notebook = current_app().db.notebooks.find_one({"_id": ObjectId(id)})
+        notebook = current_app.db.notebooks.find_one({"_id": ObjectId(id)})
 
         if not notebook:
             return jsonify({"msg": "Notebook not found"}), 404
