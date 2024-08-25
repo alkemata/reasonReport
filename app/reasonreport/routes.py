@@ -34,7 +34,7 @@ def login():
 
                 # Attach the JWT token to the response headers or JSON
             response.headers['Authorization'] = f"Bearer {access_token}"
-            response.set_cookie('access_token_cookie', access_token,httponly=True, secure=True, samesite='None',domain='.alkemata.com')
+            response.set_cookie('access_token_cookie', access_token,httponly=True, secure=True, samesite='None',domain='alkemata.com')
 
             return response
 
@@ -137,3 +137,7 @@ def get_api_notebook(id):
             return jsonify({"msg": "Notebook not found"}), 404
 
         return jsonifiy(notebook), 200
+
+@main.route('/jupyterlite')
+def start_jupyter():
+       return send_from_directory('index.html', './')
