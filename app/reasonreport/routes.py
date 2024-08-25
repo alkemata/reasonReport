@@ -140,4 +140,4 @@ def get_api_notebook(id):
 
 @main.route('/jupyterlite')
 def start_jupyter():
-       return send_from_directory('index.html', './')
+       return send_from_directory('index.html', './_output/')
