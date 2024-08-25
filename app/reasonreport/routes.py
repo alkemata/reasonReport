@@ -32,7 +32,7 @@ def login():
 
                 # Redirect to the main page
             response = redirect(url_for('main.create_notebook_page'))
-            set_access_cookies(resp, access_token)
+            set_access_cookies(response, access_token)
             return response
 
         else:
