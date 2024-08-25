@@ -130,7 +130,7 @@ def get_api_notebook(id):
         print('=========',notebook)
         if not notebook:
             return jsonify({"msg": "Notebook not found"}), 404
-
+        notebook['_id'] = str(notebook['_id']) 
         return jsonify(notebook), 200
 
 
