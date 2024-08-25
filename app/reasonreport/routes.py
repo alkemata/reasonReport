@@ -27,14 +27,11 @@ def login():
             session['username'] = user['username']
             flash('Login successful', 'success')
                 # Generate the JWT token
-            access_token = create_access_token(identity=username)
+            
+            access_token = create_access_token(identity=user['username'])
 
                 # Redirect to the main page
             response = redirect(url_for('main.create_notebook_page'))
-
-                # Attach the JWT token to the response headers or JSON
-            response.headers['Authorization'] = f"Bearer {access_token}"
-            response.set_cookie('access_token_cookie', access_token,httponly=True, secure=True, samesite='None',domain='rr.alkemata.com')
 
             return response
 
@@ -128,6 +125,7 @@ def edit_notebook(notebook_id):
 @jwt_required(locations=['cookies'])
 def get_api_notebook(id):
     with current_app.app_context():
+        print('---------- looking in database')
         db = request.app.db
         notebook = db.notebooks.find_one({"_id": ObjectId(id)})
 
