@@ -15,7 +15,7 @@ def create_app(config_filename=None):
     
     
     # Enable CORS
-    CORS(app)
+    CORS(app, supports_credentials=True, origins=["https://rr.alkemata.com", "https://jupyterlite.alkemata.com"])
 
     # Default config file path
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.py')
