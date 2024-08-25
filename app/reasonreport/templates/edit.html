@@ -15,17 +15,8 @@
     </div> 
 
     <script>
-          const documentId = "{{ notebook_id }}";
-          const response = fetch(`https://rr.alkemata.com/api/notebooks/${id}`, {
-              method: 'GET',
-              // Important: Ensure cookies are included in the request
-              credentials: 'include'
-                
-            });
-            console.log(response);
-          
+          const documentId = "{{ notebook_id }}";       
             
-
         const iframe = document.getElementById('jupyterlite-iframe');
         console.log('parent: waiting for readiness')
         // Ensure the iframe is loaded before sending the message
