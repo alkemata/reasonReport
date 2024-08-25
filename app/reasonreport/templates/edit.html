@@ -16,7 +16,7 @@
 
     <script>
           const documentId = "{{ notebook_id }}";
-          const response = await fetch(`https://rr.alkemata.com/api/notebooks/${id}`, {
+          const response = fetch(`https://rr.alkemata.com/api/notebooks/${id}`, {
               method: 'GET',
               // Important: Ensure cookies are included in the request
               credentials: 'include'
