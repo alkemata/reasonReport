@@ -137,7 +137,3 @@ def get_api_notebook(id):
             return jsonify({"msg": "Notebook not found"}), 404
 
         return jsonifiy(notebook), 200
-
-@main.route('/jupyterlite')
-def start_jupyter():
-       return send_from_directory('index.html', './_output/')
