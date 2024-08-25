@@ -125,7 +125,7 @@ def edit_notebook(notebook_id):
 
 
 @main.route('/api/notebooks/<id>', methods=['GET'])
-@jwt_required
+@jwt_required(locations=['cookies'])
 def get_api_notebook(id):
     with current_app.app_context():
         current_user = get_jwt_identity()
@@ -136,4 +136,4 @@ def get_api_notebook(id):
         if not notebook:
             return jsonify({"msg": "Notebook not found"}), 404
 
-        return notebook, 200
+        return jsonifiy(notebook), 200
