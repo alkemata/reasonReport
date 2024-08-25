@@ -137,3 +137,16 @@ def get_api_notebook(id):
             return jsonify({"msg": "Notebook not found"}), 404
 
         return jsonifiy(notebook), 200
+
+
+JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
+
+# Route to serve JupyterLite static files
+@app.route('/jupyterlite/<path:filename>')
+def serve_jupyterlite_files(filename):
+    return send_from_directory(JUPYTERLITE_PATH, filename)
+
+# Route for serving the base of JupyterLite (index.html)
+@app.route('/jupyterlite/')
+def serve_jupyterlite_index():
+    return send_from_directory(JUPYTERLITE_PATH, 'index.html')

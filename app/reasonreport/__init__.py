@@ -19,8 +19,7 @@ def create_app(config_filename=None):
 
     # Default config file path
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'config.py')
-    app.config['STATIC_FOLDER'] = '_output'
-    
+        
     # Load the default configuration if the config file exists
     if os.path.exists(config_path):
         app.config.from_pyfile(config_path)
