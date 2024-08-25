@@ -22,7 +22,7 @@
         // Ensure the iframe is loaded before sending the message
         iframe.onload = function () {
             window.addEventListener('message', function(event) {
-                console.log('parent window: message received - send data')
+                console.log('parent window: message received - send data', event)
                 // Use postMessage to send data to the iframe
                 iframe.contentWindow.postMessage({  documentId: documentId }, 'https://jupyterlite.alkemata.com');
             }
