@@ -16,17 +16,27 @@
 
     <script>
           const documentId = "{{ notebook_id }}";
+          const response = await fetch(`https://rr.alkemata.com/api/notebooks/${id}`, {
+              method: 'GET',
+              // Important: Ensure cookies are included in the request
+              credentials: 'include'
+                
+            });
+            console.log(response);
+          
+            
 
         const iframe = document.getElementById('jupyterlite-iframe');
         console.log('parent: waiting for readiness')
         // Ensure the iframe is loaded before sending the message
-        iframe.onload = function () {
+        iframe.onload = async function () {
             window.addEventListener('message', function(event) {
                 console.log('parent window: message received - send data', event)
                 // Use postMessage to send data to the iframe
                 iframe.contentWindow.postMessage({  documentId: documentId }, 'https://jupyterlite.alkemata.com');
             }
             )
+        
         };
 
     </script>
