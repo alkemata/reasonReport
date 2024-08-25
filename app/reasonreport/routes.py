@@ -125,7 +125,8 @@ def edit_notebook(notebook_id):
 
 
 @main.route('/api/notebooks/<id>', methods=['GET'])
-@jwt_required(locations=['cookies'])
+#@jwt_required(locations=['cookies'])
+@jwt_required()
 def get_api_notebook(id):
     with current_app.app_context():
         current_user = get_jwt_identity()
