@@ -11,25 +11,8 @@
 
  
     <div>
-        <iframe src="https://jupyterlite.alkemata.com" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"   width="100%" height="500px"></iframe>
-    </div> 
+    {% include './_output/Index.html' %}
+         </div> 
 
-    <script>
-          const documentId = "{{ notebook_id }}";       
-            
-        const iframe = document.getElementById('jupyterlite-iframe');
-        console.log('parent: waiting for readiness')
-        // Ensure the iframe is loaded before sending the message
-        iframe.onload = async function () {
-            window.addEventListener('message', function(event) {
-                console.log('parent window: message received - send data', event)
-                // Use postMessage to send data to the iframe
-                iframe.contentWindow.postMessage({  documentId: documentId }, 'https://jupyterlite.alkemata.com');
-            }
-            )
-        
-        };
-
-    </script>
 </body>
 </html>
