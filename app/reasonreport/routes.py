@@ -93,29 +93,21 @@ def home():
 
 # ==================== routes users.
 
-@main.route('/login', methods=['GET', 'POST'])
+# Example route to issue JWT for testing
+@app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    auth = request.json
 
-        success, user = authenticate_user(username, password)
-        if success:
-            session['username'] = user['username']
-            flash('Login successful', 'success')
-                # Generate the JWT token
-            
-            access_token = create_access_token(identity=user['username'])
+    # Placeholder for actual user verification
+    if auth and auth['username'] == 'admin' and auth['password'] == 'adminpass':
+        token = jwt.encode({
+            'username': 'admin',
+            'role': 'admin',
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
+        }, JWT_SECRET_KEY, algorithm="HS256")
+        return jsonify({'token': token})
 
-                # Redirect to the main page
-            response = redirect(url_for('main.create_notebook_page'))
-            set_access_cookies(response, access_token)
-            return response
-
-        else:
-            flash('Invalid credentials', 'danger')
-
-    return render_template('login.html')
+    return jsonify({"message": "Invalid credentials"}), 401
 
 
 @main.route('/register', methods=['GET', 'POST'])
