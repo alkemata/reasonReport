@@ -156,7 +156,7 @@ def serve_jupyterlite_index():
     return send_from_directory(JUPYTERLITE_PATH, 'index.html')
 
 
-@app.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@main.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @admin_required
 def admin_dashboard():
     with current_app.app_context():
