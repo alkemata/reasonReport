@@ -94,7 +94,7 @@ def home():
 # ==================== routes users.
 
 # Example route to issue JWT for testing
-@app.route('/login', methods=['POST'])
+@main.route('/login', methods=['POST'])
 def login():
     auth = request.json
 
