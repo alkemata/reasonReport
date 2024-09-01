@@ -50,7 +50,7 @@ def admin_required(f):
     return decorated
 
 # Admin route for managing users
-@app.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@main.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @admin_required
 def manage_users(current_user):
     users_collection = mongo.db.users
@@ -82,7 +82,7 @@ def manage_users(current_user):
         user_id = request.json.get('id')
         users_collection.delete_one({'_id': user_id})
         return jsonify({"message": "User deleted"}), 200
-        
+
 
 @main.route('/')
 def home():
