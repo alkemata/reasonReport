@@ -17,6 +17,72 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Decorator to check for a valid JWT token
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        if 'Authorization' in request.headers:
+            token = request.headers['Authorization'].split(" ")[1]  # Extract Bearer token
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 403
+        try:
+            # Decode the token to get user data
+            data = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
+            current_user = data['username']
+            user_role = data['role']
+        except jwt.ExpiredSignatureError:
+            return jsonify({'message': 'Token has expired!'}), 403
+        except jwt.InvalidTokenError:
+            return jsonify({'message': 'Invalid token!'}), 403
+
+        return f(current_user, user_role, *args, **kwargs)
+    return decorated
+
+# Decorator to ensure that the user has admin role
+def admin_required(f):
+    @wraps(f)
+    @token_required
+    def decorated(current_user, user_role, *args, **kwargs):
+        if user_role != 'admin':
+            return jsonify({'message': 'Admin access required'}), 403
+        return f(current_user, *args, **kwargs)
+    return decorated
+
+# Admin route for managing users
+@app.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@admin_required
+def manage_users(current_user):
+    users_collection = mongo.db.users
+
+    # List users
+    if request.method == 'GET':
+        users = list(users_collection.find({}, {"password": 0}))  # Exclude passwords
+        return jsonify(users)
+
+    # Accept registration (manual addition of users)
+    if request.method == 'POST':
+        user_data = request.json
+        users_collection.insert_one({
+            "username": user_data['username'],
+            "email": user_data['email'],
+            "status": "accepted"
+        })
+        return jsonify({"message": "User registration accepted"}), 201
+
+    # Edit user
+    if request.method == 'PUT':
+        user_id = request.json.get('id')
+        updated_data = request.json.get('data')
+        users_collection.update_one({'_id': user_id}, {'$set': updated_data})
+        return jsonify({"message": "User updated"}), 200
+
+    # Delete user
+    if request.method == 'DELETE':
+        user_id = request.json.get('id')
+        users_collection.delete_one({'_id': user_id})
+        return jsonify({"message": "User deleted"}), 200
+        
 
 @main.route('/')
 def home():
@@ -24,6 +90,7 @@ def home():
         return redirect(url_for('main.dashboard'))
     return render_template('login.html')
 
+# ==================== routes users.
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
@@ -81,6 +148,8 @@ def logout():
     flash('You have been logged out', 'info')
     return redirect(url_for('main.login'))
 
+
+# ===================== routes notebook
 
 # Route to display a Jupyter notebook
 @main.route('/notebook/<notebook_id>')
@@ -142,6 +211,7 @@ def get_api_notebook(id):
         notebook['_id'] = str(notebook['_id']) 
         return jsonify(notebook), 200
 
+#============= routes Jupyterlite
 
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
 
@@ -156,36 +226,4 @@ def serve_jupyterlite_index():
     return send_from_directory(JUPYTERLITE_PATH, 'index.html')
 
 
-@main.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
-@admin_required
-def admin_dashboard():
-    with current_app.app_context():
-        users_collection = app.db.users
-
-        # List users
-        if request.method == 'GET':
-            users = list(users_collection.find())
-            return render_template('admin_dashboard.html', users=users)
-
-        # Accept registration (manual addition of users)
-        if request.method == 'POST':
-            user_data = request.json or request.form
-            users_collection.insert_one({
-                "username": user_data['username'],
-                "email": user_data['email'],
-                "status": "accepted"
-            })
-            return jsonify({"message": "User registration accepted"}), 201
-        # Edit user
-        if request.method == 'PUT':
-            user_id = request.json.get('id')
-            updated_data = request.json.get('data')
-            users_collection.update_one({'_id': user_id}, {'$set': updated_data})
-            return jsonify({"message": "User updated"}), 200
-
-        # Delete user
-        if request.method == 'DELETE':
-            user_id = request.json.get('id')
-            users_collection.delete_one({'_id': user_id})
-            return jsonify({"message": "User deleted"}), 200
 
