@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <h2>User List</h2>
+    <ul>
+        {% for user in users %}
+        <li>
+            {{ user.username }} - {{ user.email }}
+            <button onclick="deleteUser('{{ user._id }}')">Delete</button>
+            <button onclick="editUser('{{ user._id }}')">Edit</button>
+        </li>
+        {% endfor %}
+    </ul>
+
+    <script>
+        function deleteUser(id) {
+            fetch('/admin/users', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id })
+            }).then(response => response.json())
+              .then(data => alert(data.message));
+        }
+
+        function editUser(id) {
+            // Implement a form to edit the user and send PUT request
+            let newData = prompt("Enter new data for user in JSON format");
+            fetch('/admin/users', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: id, data: JSON.parse(newData) })
+            }).then(response => response.json())
+              .then(data => alert(data.message));
+        }
+    </script>
+</body>
+</html>

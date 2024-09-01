@@ -9,6 +9,15 @@ from bson import ObjectId
 
 main= Blueprint('main', __name__)
 
+def admin_required(f):
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if current_user.role != 'admin':
+            return jsonify({"error": "Admin access required"}), 403
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 @main.route('/')
 def home():
     if 'username' in session:
@@ -145,3 +154,38 @@ def serve_jupyterlite_files(filename):
 @main.route('/jupyterlite/')
 def serve_jupyterlite_index():
     return send_from_directory(JUPYTERLITE_PATH, 'index.html')
+
+
+@app.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@admin_required
+def admin_dashboard():
+    with current_app.app_context():
+        users_collection = app.db.users
+
+        # List users
+        if request.method == 'GET':
+            users = list(users_collection.find())
+            return render_template('admin_dashboard.html', users=users)
+
+        # Accept registration (manual addition of users)
+        if request.method == 'POST':
+            user_data = request.json or request.form
+            users_collection.insert_one({
+                "username": user_data['username'],
+                "email": user_data['email'],
+                "status": "accepted"
+            })
+            return jsonify({"message": "User registration accepted"}), 201
+        # Edit user
+        if request.method == 'PUT':
+            user_id = request.json.get('id')
+            updated_data = request.json.get('data')
+            users_collection.update_one({'_id': user_id}, {'$set': updated_data})
+            return jsonify({"message": "User updated"}), 200
+
+        # Delete user
+        if request.method == 'DELETE':
+            user_id = request.json.get('id')
+            users_collection.delete_one({'_id': user_id})
+            return jsonify({"message": "User deleted"}), 200
+
