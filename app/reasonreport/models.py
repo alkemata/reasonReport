@@ -49,6 +49,10 @@ def set_admin(username):
     result = users_collection.update_one(query, update)
     return
 
+def list_users():
+    users = list(users_collection.find({}, {"password": 0}))  # Exclude passwords
+    return users
+
 def authenticate_user(username, password):
     # Find the user in the database
     user = users_collection.find_one({"username": username})
