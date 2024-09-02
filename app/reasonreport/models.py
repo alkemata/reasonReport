@@ -16,6 +16,7 @@ def register_user(username, password):
     # Check if username is already taken
     existing_user = users_collection.find_one({"username": username})
     if existing_user:
+        print('existing username')
         return False, "Username already exists"
 
     # Hash the password and create the user with default status as 'basic'
@@ -33,7 +34,11 @@ def register_user(username, password):
 
 def check_admin(username):
     user=get_user_by_username(username)
-    if user.role=="admin":
+    projection = {"role": 1, "_id": 0}
+    
+    # Find the user and retrieve the 'role'
+    user = users_collection.find_one(query, projection)
+    if user.get('role')=="admin":
         return True
     return False
     user=get_user_by_username(username)
