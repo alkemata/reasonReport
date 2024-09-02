@@ -30,7 +30,6 @@ def admin_required(f):
 @main.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @admin_required
 def manage_users():
-    users_collection = mongo.db.users
 
     # List users
     if request.method == 'GET':
@@ -39,25 +38,17 @@ def manage_users():
 
     # Accept registration (manual addition of users)
     if request.method == 'POST':
-        user_data = request.json
-        users_collection.insert_one({
-            "username": user_data['username'],
-            "email": user_data['email'],
-            "status": "accepted"
-        })
+#todo complete
         return jsonify({"message": "User registration accepted"}), 201
 
     # Edit user
     if request.method == 'PUT':
-        user_id = request.json.get('id')
-        updated_data = request.json.get('data')
-        users_collection.update_one({'_id': user_id}, {'$set': updated_data})
+# todo complete
         return jsonify({"message": "User updated"}), 200
 
     # Delete user
     if request.method == 'DELETE':
-        user_id = request.json.get('id')
-        users_collection.delete_one({'_id': user_id})
+#todo complete
         return jsonify({"message": "User deleted"}), 200
 
 
