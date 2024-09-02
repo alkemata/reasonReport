@@ -10,10 +10,10 @@ client = MongoClient('mongodb://mongo:27017/flaskdb')
 db = client.flaskdb
 users_collection = db.users
 notebooks_collection = db.notebooks
+set_admin('rdi')
 
 
 def register_user(username, password):
-
     # Check if username is already taken
     existing_user = users_collection.find_one({"username": username})
     if existing_user:
@@ -24,11 +24,26 @@ def register_user(username, password):
     users_collection.insert_one({
         "username": username,
         "password": hashed_password,
-        "status": "basic"  # Default status for newly registered users
+        "role": "basic",  # Default status for newly registered users
+        "notebook":0,
+        "status":"waiting"
     })
 
     return True, "User registered successfully"
 
+
+def check_admin(username):
+    user=get_user_by_username(username)
+    if user.role=="admin":
+        return True
+    return False
+    user=get_user_by_username(username)
+
+def set_admin(username):
+    query = {"username": username}
+    update = {"$set": {"role": "admin"}}
+    result = users_collection.update_one(query, update)
+    return
 
 def authenticate_user(username, password):
     # Find the user in the database

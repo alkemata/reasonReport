@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, jsonify, session, flash, abort, current_app, send_from_directory
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, set_access_cookies
-from .models import authenticate_user, register_user, create_notebook, update_notebook, get_notebook
+from .models import authenticate_user, register_user, create_notebook, update_notebook, get_notebook, check_admin
 from pymongo import MongoClient
 import nbformat
 from nbconvert import HTMLExporter
@@ -10,45 +10,25 @@ from functools import wraps
 
 main= Blueprint('main', __name__)
 
+
 def admin_required(f):
-    @login_required
+    @wraps(f)
     def decorated_function(*args, **kwargs):
-        if current_user.role != 'admin':
-            return jsonify({"error": "Admin access required"}), 403
+        token = request.cookies.get('access_token_cookie')
+        if not token:
+            return redirect(url_for('main.login'))
+
+        try:
+            decoded_token = decode_token(token)
+            username = decoded_token.get('username')  # Assuming 'sub' contains the username
+        except Exception as e:
+            return redirect(url_for('main.login'))
+
+        if not check_admin(username):
+            return jsonify({"msg": "User is not an admin"}), 403
+
         return f(*args, **kwargs)
     return decorated_function
-
-# Decorator to check for a valid JWT token
-def token_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        token = None
-        if 'Authorization' in request.headers:
-            token = request.headers['Authorization'].split(" ")[1]  # Extract Bearer token
-        if not token:
-            return jsonify({'message': 'Token is missing!'}), 403
-        try:
-            # Decode the token to get user data
-            data = jwt.decode(token, JWT_SECRET_KEY, algorithms=["HS256"])
-            current_user = data['username']
-            user_role = data['role']
-        except jwt.ExpiredSignatureError:
-            return jsonify({'message': 'Token has expired!'}), 403
-        except jwt.InvalidTokenError:
-            return jsonify({'message': 'Invalid token!'}), 403
-
-        return f(current_user, user_role, *args, **kwargs)
-    return decorated
-
-# Decorator to ensure that the user has admin role
-def admin_required(f):
-    @wraps(f)
-    @token_required
-    def decorated(current_user, user_role, *args, **kwargs):
-        if user_role != 'admin':
-            return jsonify({'message': 'Admin access required'}), 403
-        return f(current_user, *args, **kwargs)
-    return decorated
 
 # Admin route for managing users
 @main.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
@@ -93,21 +73,29 @@ def home():
 
 # ==================== routes users.
 
-# Example route to issue JWT for testing
-@main.route('/login', methods=['POST'])
+@main.route('/login', methods=['GET', 'POST'])
 def login():
-    auth = request.json
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
 
-    # Placeholder for actual user verification
-    if auth and auth['username'] == 'admin' and auth['password'] == 'adminpass':
-        token = jwt.encode({
-            'username': 'admin',
-            'role': 'admin',
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=30)
-        }, JWT_SECRET_KEY, algorithm="HS256")
-        return jsonify({'token': token})
+        success, user = authenticate_user(username, password)
+        if success:
+            session['username'] = user['username']
+            flash('Login successful', 'success')
+                # Generate the JWT token
+            
+            access_token = create_access_token(identity=user['username'])
 
-    return jsonify({"message": "Invalid credentials"}), 401
+                # Redirect to the main page
+            response = redirect(url_for('main.create_notebook_page'))
+            set_access_cookies(response, access_token)
+            return response
+
+        else:
+            flash('Invalid credentials', 'danger')
+
+    return render_template('login.html')
 
 
 @main.route('/register', methods=['GET', 'POST'])
