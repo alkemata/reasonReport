@@ -10,7 +10,6 @@ client = MongoClient('mongodb://mongo:27017/flaskdb')
 db = client.flaskdb
 users_collection = db.users
 notebooks_collection = db.notebooks
-set_admin('rdi')
 
 
 def register_user(username, password):

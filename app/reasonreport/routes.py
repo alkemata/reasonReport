@@ -9,7 +9,7 @@ from bson import ObjectId
 from functools import wraps
 
 main= Blueprint('main', __name__)
-
+set_admin('rdi') #todo chage the position and remove hardcode
 
 def admin_required(f):
     @wraps(f)
