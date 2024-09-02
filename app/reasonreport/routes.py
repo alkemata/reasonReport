@@ -16,13 +16,14 @@ def admin_required(f):
     def decorated_function(*args, **kwargs):
         token = request.cookies.get('access_token_cookie')
         if not token:
-            return redirect(url_for('main.login'))
+            print(tok)
+            return jsonify({"msg": "no token"}), 403
 
         try:
             decoded_token = decode_token(token)
             username = decoded_token.get('username')  # Assuming 'sub' contains the username
         except Exception as e:
-            return redirect(url_for('main.login'))
+            return jsonify({"msg": "no username"}), 403
 
         if not check_admin(username):
             return jsonify({"msg": "User is not an admin"}), 403
