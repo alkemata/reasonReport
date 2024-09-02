@@ -51,6 +51,8 @@ def set_admin(username):
 
 def list_users():
     users = list(users_collection.find({}, {"password": 0}))  # Exclude passwords
+    for user in users:
+        user.pop('_id', None)  
     return users
 
 def authenticate_user(username, password):
