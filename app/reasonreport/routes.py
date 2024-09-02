@@ -13,15 +13,10 @@ set_admin('rdi') #todo chage the position and remove hardcode
 
 def admin_required(f):
     @wraps(f)
+    @jwt_required()
     def decorated_function(*args, **kwargs):
-        token = request.cookies.get('access_token_cookie')
-        if not token:
-            print(tok)
-            return jsonify({"msg": "no token"}), 403
-
         try:
-            decoded_token = decode_token(token)
-            username = decoded_token.get('username')  # Assuming 'sub' contains the username
+            username = get_jwt_identity()
         except Exception as e:
             return jsonify({"msg": "no username"}), 403
 
