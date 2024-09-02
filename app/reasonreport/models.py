@@ -33,7 +33,7 @@ def register_user(username, password):
 
 
 def check_admin(username):
-    user=get_user_by_username(username)
+    query = {"username": username}
     projection = {"role": 1, "_id": 0}
     
     # Find the user and retrieve the 'role'
