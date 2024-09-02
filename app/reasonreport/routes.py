@@ -29,7 +29,7 @@ def admin_required(f):
 # Admin route for managing users
 @main.route('/admin/users', methods=['GET', 'POST', 'PUT', 'DELETE'])
 @admin_required
-def manage_users(current_user):
+def manage_users():
     users_collection = mongo.db.users
 
     # List users
