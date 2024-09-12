@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask GUI</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-GLgdyEnFDe7f/BXMf/MiybPQB/fEX/+9G1qu/sBwyHT64JwHBfdTVW3CxHP8iYf/" crossorigin="anonymous">
+    <style>
+        .navbar-custom {
+            background-color: #28a745; /* Custom background color */
+        }
+        .btn-custom {
+            background-color: #ff9800; /* Custom button color */
+            border-color: #ff9800;
+            color: white;
+        }
+        .btn-custom:hover {
+            background-color: #e68900;
+            border-color: #e68900;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">alkemata</a>
+
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <!-- Check if user is logged in -->
+                    {% if is_logged %}
+                    
+                    <!-- Dropdown Menu -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle btn-custom" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Menu
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="#">Create</a></li>
+                            <li><a class="dropdown-item" href="#">Logout</a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Logo/Icon -->
+                    <li class="nav-item">
+                        <a class="nav-link btn-custom" href="#" role="button">
+                            <span class="bi bi-person-circle"></span> <!-- Icon can be replaced with actual logo -->
+                        </a>
+                    </li>
+
+                    <!-- Button that starts a JavaScript -->
+                    <li class="nav-item">
+                        <button class="btn btn-custom" onclick="startScript()">Button</button>
+                    </li>
+
+                    <!-- Username displayed when logged in -->
+                    <span class="navbar-text">
+                        {{ username }}
+                    </span>
+
+                    {% else %}
+                    <!-- If not logged in, show login link -->
+                    <li class="nav-item">
+                        <a class="nav-link btn-custom" href="/login">Login</a>
+                    </li>
+                    {% endif %}
+                    
+                </ul>
+
+                <!-- Edit Button (always visible) -->
+                <button class="btn btn-custom">Edit</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- JavaScript section -->
+    <script>
+        function startScript() {
+            alert('JavaScript has been triggered!');
+        }
+    </script>
+
+    <div class="content">
+        {% block content %}
+        <!-- This block can be extended by other templates -->
+        {% endblock %}
+    </div>
+
+    <!-- Bootstrap JS and Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.min.js"></script>
+
+</body>
+</html>

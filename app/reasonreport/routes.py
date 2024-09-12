@@ -34,7 +34,6 @@ def manage_users():
     # List users
     if request.method == 'GET':
         users=list_users()
-        print(users)
         return jsonify(users)
 
     # Accept registration (manual addition of users)

@@ -13,7 +13,7 @@ services:
     networks:
       - default
     
-  flaskapp:
+  flaskapprr:
     build: .
     volumes:
       - ./app:/app/
@@ -22,9 +22,9 @@ services:
     labels:
       traefik.enable: true
       traefik.docker.network: traefik_web
-      traefik.http.routers.flaskapp.entrypoints: websecure
-      traefik.http.routers.flaskapp.rule: 'Host(`rr.alkemata.com`)'
-      traefik.http.services.flaskapp.loadbalancer.server.port: 5000
+      traefik.http.routers.flaskapprr.entrypoints: websecure
+      traefik.http.routers.flaskapprr.rule: 'Host(`rr.alkemata.com`)'
+      traefik.http.services.flaskapprr.loadbalancer.server.port: 5000
     networks:
       - traefik_web
       - default

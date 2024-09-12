@@ -1,27 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
-    <p>Logged in as: {{ user_name }}</p>
+{% extends "main.html" %}
 
-    <!-- Display either the Edit or Comment button based on user role -->
-    {% if is_author %}
-        <form action="{{ url_for('main.edit_notebook', notebook_id=notebook_id) }}" method="GET">
-            <button type="submit">Edit Notebook</button>
-        </form>
-    {% else %}
-        <form action="{{ url_for('main.comment_notebook', notebook_id=notebook_id) }}" method="GET">
-            <button type="submit">Comment on Notebook</button>
-        </form>
-    {% endif %}
+{% block content %}
 
     <div>
         {{ body|safe }}  <!-- Render the notebook HTML -->
     </div>
 </body>
-</html>
+{% endblock %}
