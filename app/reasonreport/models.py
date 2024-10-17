@@ -8,14 +8,6 @@ from datetime import datetime
 
 mongo = PyMongo()
 
-bcrypt = Bcrypt()
-
-client = MongoClient('mongodb://mongo:27017/flaskdb')
-db = client.flaskdb
-users_collection = db.users
-notebooks_collection = db.notebooks
-
-
 # User Operations
 def create_user(username, password, landing_page=None, additional_fields=None):
     if mongo.db.users.find_one({'username': username}):
