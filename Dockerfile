@@ -5,4 +5,5 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
+CD ./reasonreport
 CMD flask run --debug -h 0.0.0.0 -p 5000
