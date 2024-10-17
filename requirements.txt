@@ -8,5 +8,5 @@ flask-restful
 nbconvert
 nbformat
 python-slugify
-jwt
+PyJWT
 werkzeug
