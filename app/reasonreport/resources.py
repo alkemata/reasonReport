@@ -18,6 +18,7 @@ class UserRegister(Resource):
         
         try:
             user_id = create_user(args['username'], args['password'])
+            print('User created succesfully')
             return {'message': 'User created successfully', 'user_id': user_id}, 201
         except ValueError as e:
             return {'message': str(e)}, 400
@@ -35,6 +36,7 @@ class UserLogin(Resource):
             return {'message': 'Invalid credentials'}, 401
         
         token = generate_token(str(user['_id']))
+        print('User created!')
         return {'token': token}, 200
 
 # User CRUD Operations

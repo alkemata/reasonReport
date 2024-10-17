@@ -52,6 +52,7 @@ def index():
 
 @app.route('/login')
 def login():
+    print(session['token'])
     return render_template('login.html')
 
 @app.route('/register')
