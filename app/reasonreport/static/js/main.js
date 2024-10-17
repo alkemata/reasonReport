@@ -66,7 +66,7 @@ async function createNotebook() {
             const data = await response.json();
             const notebookId = data.notebook_id;
             const slug = getUsername();
-            window.location.href = `/slug/${slug}`;
+            window.location.href = `/edit/${notebook_id}`;
         } else {
             const error = await response.json();
             alert(`Error: ${error.message}`);

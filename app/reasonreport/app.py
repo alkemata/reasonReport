@@ -87,7 +87,7 @@ def edit_notebook(identifier):
     # You need to configure JupyterLite separately and point the iframe to it
     # For demonstration, we'll assume JupyterLite is hosted at /jupyterlite/
     # and accepts a notebook identifier as a query parameter
-    return render_template('jupyterlite.html', identifier=identifier)
+    return render_template('edit.html', identifier=identifier)
 
 # Route to serve JupyterLite (assuming you have it set up)
 @app.route('/jupyterlite/')
