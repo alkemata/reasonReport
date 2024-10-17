@@ -12,19 +12,53 @@
         <nav>
             <a href="{{ url_for('index') }}">Home</a>
             <div id="auth-buttons">
-                {% if not session.get('token') %}
-                    <button onclick="showLogin()">Login</button>
-                    <button onclick="showRegister()">Register</button>
-                {% else %}
-                    <span>Welcome, {{ session.get('username') }}</span>
-                    <button onclick="createNotebook()">Create</button>
-                    <button onclick="logout()">Logout</button>
-                {% endif %}
+                <!-- These buttons will be managed by JavaScript -->
+                <button id="login-button" onclick="showLogin()">Login</button>
+                <button id="register-button" onclick="showRegister()">Register</button>
+                <span id="welcome-message" style="display: none;"></span>
+                <button id="create-button" style="display: none;" onclick="createNotebook()">Create Notebook</button>
+                <button id="logout-button" style="display: none;" onclick="logout()">Logout</button>
             </div>
         </nav>
     </header>
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <script>
+        // Check for token on page load to manage user state
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = sessionStorage.getItem('token'); // Retrieve token from sessionStorage
+
+            if (token) {
+                // User is logged in, display appropriate buttons and welcome message
+                document.getElementById('login-button').style.display = 'none';
+                document.getElementById('register-button').style.display = 'none';
+                document.getElementById('logout-button').style.display = 'inline-block';
+                document.getElementById('create-button').style.display = 'inline-block';
+
+                // Retrieve and display the username if it's stored
+                const username = sessionStorage.getItem('username');
+                if (username) {
+                    document.getElementById('welcome-message').style.display = 'inline';
+                    document.getElementById('welcome-message').innerText = `Welcome, ${username}`;
+                }
+            } else {
+                // User is not logged in, display login/register buttons
+                document.getElementById('login-button').style.display = 'inline-block';
+                document.getElementById('register-button').style.display = 'inline-block';
+                document.getElementById('logout-button').style.display = 'none';
+                document.getElementById('create-button').style.display = 'none';
+                document.getElementById('welcome-message').style.display = 'none';
+            }
+        });
+
+        // Function to handle logout
+        function logout() {
+            sessionStorage.removeItem('token'); // Remove token from sessionStorage
+            sessionStorage.removeItem('username'); // Remove username as well
+            window.location.href = '/'; // Redirect to home page
+        }
+    </script>
 </body>
 </html>
