@@ -1,9 +1,18 @@
-{% extends "main.html" %}
-
+<!-- templates/notebook.html -->
+{% extends "base.html" %}
 {% block content %}
-
-    <div>
-        {{ body|safe }}  <!-- Render the notebook HTML -->
-    </div>
-</body>
+    {% if notebook %}
+        <h2>{{ notebook.title }}</h2>
+        <p>Author: {{ notebook.author_username }}</p>
+        <p>Date: {{ notebook.date }}</p>
+        <iframe src="{{ url_for('edit_notebook', identifier=notebook.slug) }}" width="100%" height="600px" style="display:none;" id="jupyterlite-iframe"></iframe>
+        <div id="notebook-display">
+            <!-- You can embed notebook content here or use JupyterLite -->
+        </div>
+        {% if is_author %}
+            <button onclick="toggleEdit()">Edit</button>
+        {% endif %}
+    {% else %}
+        <p>Notebook not found.</p>
+    {% endif %}
 {% endblock %}

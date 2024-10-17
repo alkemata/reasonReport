@@ -1,8 +1,12 @@
 Flask
-pymongo
+Flask-PyMongo
 flask-cors
 Flask-JWT-Extended 
 flask-bcrypt
 Flask-Login
+flask-restful
 nbconvert
 nbformat
+python-slugify
+jwt
+werkzeug

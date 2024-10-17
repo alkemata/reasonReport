@@ -1,0 +1,30 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title if title else "Flask App" }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('index') }}">Home</a>
+            <div id="auth-buttons">
+                {% if not session.get('token') %}
+                    <button onclick="showLogin()">Login</button>
+                    <button onclick="showRegister()">Register</button>
+                {% else %}
+                    <span>Welcome, {{ session.get('username') }}</span>
+                    <button onclick="createNotebook()">Create</button>
+                    <button onclick="logout()">Logout</button>
+                {% endif %}
+            </div>
+        </nav>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
