@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
 from flask_restful import Api
 from config import Config
 from models import mongo, get_notebook, get_user_by_username, get_user_by_id
@@ -87,12 +87,19 @@ def edit_notebook(identifier):
     # You need to configure JupyterLite separately and point the iframe to it
     # For demonstration, we'll assume JupyterLite is hosted at /jupyterlite/
     # and accepts a notebook identifier as a query parameter
-    return render_template('edit.html', identifier=identifier)
+    return render_template('edit.html', notebook_id=identifier)
+
+JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
+
+# Route to serve JupyterLite static files
+@main.route('/jupyterlite/<path:filename>')
+def serve_jupyterlite_files(filename):
+    return send_from_directory(JUPYTERLITE_PATH, filename)
 
 # Route to serve JupyterLite (assuming you have it set up)
 @app.route('/jupyterlite/')
 def jupyterlite():
-    return render_template('jupyterlite.html')
+     return send_from_directory(JUPYTERLITE_PATH, 'index.html')
 
 # Run the app
 if __name__ == '__main__':
