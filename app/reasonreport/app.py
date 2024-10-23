@@ -92,7 +92,7 @@ def edit_notebook(identifier):
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
 
 # Route to serve JupyterLite static files
-@main.route('/jupyterlite/<path:filename>')
+@app.route('/jupyterlite/<path:filename>')
 def serve_jupyterlite_files(filename):
     return send_from_directory(JUPYTERLITE_PATH, filename)
 
