@@ -86,6 +86,7 @@ class NotebookCreate(Resource):
     def post(self):
         author_id = request.user['id']
         notebook_id = create_notebook(author_id)
+        print(notebook_id)
         return {'message': 'Notebook created', 'notebook_id': notebook_id}, 201
 
 class NotebookSave(Resource):
