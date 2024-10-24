@@ -37,7 +37,9 @@ class UserLogin(Resource):
         
         # Generate a response and set the token cookie
         response = jsonify({'message': 'Login successful'})
-        return set_token_cookie(response, str(user['_id'])),200
+        header=set_token_cookie(response,str(user['_id']))
+        return response, 200,  header
+        
 
 # User CRUD Operations
 class UserResource(Resource):

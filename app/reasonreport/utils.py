@@ -53,14 +53,9 @@ def set_token_cookie(response, user_id):
     Helper function to set the JWT token in an HTTP-only cookie.
     """
     token = generate_token(user_id)
-    response.set_cookie(
-        'jwt_token',
-        token,
-        httponly=True,  # Prevent JavaScript access (mitigates XSS attacks)
-        secure=True,  # Only send cookie over HTTPS (use in production)
-        samesite='Strict'  # Prevent CSRF (adjust as needed for your use case)
-    )
-    return response
+    header={'Set-cookie','jwt_token='+token+';httponly;secure;SameSite=Strict'}
+
+    return header
 
 def clear_token_cookie(response):
     """
