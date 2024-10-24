@@ -25,7 +25,8 @@ def decode_token(token):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        #token = request.headers.get('Authorization', '').replace('Bearer ', '')
+        token = request.cookies.get('jwt_token')
         if not token:
             return {'message': 'Token is missing!'}, 401
         
@@ -46,3 +47,24 @@ def token_required(f):
         return f(*args, **kwargs)
     
     return decorated
+
+def set_token_cookie(response, user_id):
+    """
+    Helper function to set the JWT token in an HTTP-only cookie.
+    """
+    token = generate_token(user_id)
+    response.set_cookie(
+        'jwt_token',
+        token,
+        httponly=True,  # Prevent JavaScript access (mitigates XSS attacks)
+        secure=True,  # Only send cookie over HTTPS (use in production)
+        samesite='Strict'  # Prevent CSRF (adjust as needed for your use case)
+    )
+    return response
+
+def clear_token_cookie(response):
+    """
+    Helper function to clear the JWT token cookie.
+    """
+    response.delete_cookie('jwt_token')
+    return response

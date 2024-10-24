@@ -5,7 +5,7 @@ from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
     create_notebook, save_notebook, get_notebook, delete_notebook
 )
-from utils import generate_token, token_required
+from utils import token_required,set_token_cookie
 from werkzeug.security import check_password_hash
 
 # User Registration
@@ -35,9 +35,9 @@ class UserLogin(Resource):
         if not user or not check_password_hash(user['password'], args['password']):
             return {'message': 'Invalid credentials'}, 401
         
-        token = generate_token(str(user['_id']))
-        print('User created!')
-        return {'token': token}, 200
+        # Generate a response and set the token cookie
+        response = make_response(jsonify({'message': 'Login successful'}))
+        return set_token_cookie(response, user['_id']),200
 
 # User CRUD Operations
 class UserResource(Resource):

@@ -57,9 +57,7 @@ async function createNotebook() {
     try {
         const response = await fetch(`${API_BASE}/notebooks`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
+            credentials: 'include', // Include cookies in the request
         });
 
         if (response.status === 201) {
@@ -104,6 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ username, password }),
+                    credentials: 'include',
                 });
 
                 const data = await response.json();
@@ -135,6 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({ username, password }),
+                    credentials: 'include', 
                 });
 
                 const data = await response.json();
@@ -156,9 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         // Create notebook
                         const notebookResponse = await fetch(`${API_BASE}/notebooks`, {
                             method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${loginData.token}`,
-                            },
+                            credentials: 'include', // Include cookies in the request
                         });
 
                         if (notebookResponse.status === 201) {
