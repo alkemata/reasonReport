@@ -54,7 +54,7 @@ def set_token_cookie(response, user_id):
     """
     token = generate_token(user_id)
     header={'Set-cookie':'jwt_token='+token+';httponly;secure;SameSite=Strict'}
-
+    print (header)
     return header
 
 def clear_token_cookie(response):
