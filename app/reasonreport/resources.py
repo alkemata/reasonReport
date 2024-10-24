@@ -36,7 +36,7 @@ class UserLogin(Resource):
             return {'message': 'Invalid credentials'}, 401
         
         # Generate a response and set the token cookie
-        response = jsonify({'message': 'Login successful'})
+        response = {'message': 'Login successful'}
         header=set_token_cookie(response,str(user['_id']))
         return response, 200,  header
         
