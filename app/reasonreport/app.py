@@ -26,7 +26,7 @@ api.add_resource(UserLogin, '/api/login')
 api.add_resource(UserResource, '/api/users/<string:user_id>')
 api.add_resource(NotebookCreate, '/api/notebooks')
 api.add_resource(NotebookSave, '/api/notebooks/<string:notebook_id>')
-api.add_resource(NotebookQuery, '/api/notebooks/query')
+api.add_resource(NotebookQuery, '/api/notebooks/query/<string:notebook_id>')
 api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
 
 # Frontend Routes

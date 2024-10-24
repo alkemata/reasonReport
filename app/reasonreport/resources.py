@@ -108,10 +108,8 @@ class NotebookSave(Resource):
 
 class NotebookQuery(Resource):
     @token_required
-    def get(self):
-        notebook_id = request.args.get('id')
-        slug = request.args.get('slug')
-        
+    def get(self,notebook_id):
+                
         if not notebook_id and not slug:
             return {'message': 'Provide either id or slug as query parameter'}, 400
         
