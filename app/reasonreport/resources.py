@@ -88,7 +88,6 @@ class NotebookCreate(Resource):
     def post(self):
         author_id = request.user['id']
         notebook_id = create_notebook(author_id)
-        print(notebook_id)
         return {'message': 'Notebook created', 'notebook_id': notebook_id}, 201
 
 class NotebookSave(Resource):
@@ -120,7 +119,7 @@ class NotebookQuery(Resource):
         
         if not notebook:
             return {'message': 'Notebook not found'}, 404
-        
+        #notebook['date']=notebook['date'].isoformat()
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
         

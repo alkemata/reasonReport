@@ -56,7 +56,7 @@ def create_notebook(author_id):
     
     nb['cells'] = cells
     
-    notebook_json = nbformat.writes(nb)
+    notebook_json = nb
     
     # Slug based on username will be set in the frontend after registration
     notebook = {
