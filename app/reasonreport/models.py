@@ -115,7 +115,7 @@ def delete_notebook(notebook_id):
     mongo.db.notebooks.delete_one({'_id': ObjectId(notebook_id)})
 
 def notebook_html(notebook):
-    notebook_content = nbformat
+    notebook_content = nbformat.from_dict(notebook)
     html_exporter = HTMLExporter()
     (body, resources) = html_exporter.from_notebook_node(notebook_content)
     return body
