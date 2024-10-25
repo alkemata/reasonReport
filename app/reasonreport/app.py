@@ -81,6 +81,29 @@ def notebook(slug):
     else:
         return render_template('notebook.html', notebook=None, is_author=False)
 
+@app.route('/id/<id>')
+def notebook(slug):
+    token = request.cookies.get('token') or session.get('token')
+    user_id = None
+    if token:
+        user_id = decode_token(token)
+        user = get_user_by_id(user_id)
+    notebook = get_notebook(id)
+    if notebook:
+        notebook['_id'] = str(notebook['_id'])
+        is_author = False
+        if user_id and notebook['author'] == str(user_id):
+            is_author = True
+        # Fetch author's username
+        author = get_user_by_id(notebook['author'])
+        if author:
+            notebook['author_username'] = author['username']
+        else:
+            notebook['author_username'] = 'Unknown'
+        return render_template('notebook.html', notebook=notebook, is_author=is_author)
+    else:
+        return render_template('notebook.html', notebook=None, is_author=False)
+
 @app.route('/edit/<identifier>')
 def edit_notebook(identifier):
     # This route serves the JupyterLite editor

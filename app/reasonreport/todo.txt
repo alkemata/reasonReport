@@ -1,0 +1,23 @@
+1-
+ quand jupyterlite est charge (message envoyé par l'extension jupyterlab): enelever le boutton creer notebook
+et le remplacer par le bouton publish qui envoie un message à l'extension quand on clique dessus
+Et on rajoute un bouton "fermer l'éditeur" pour revenir en mode vue.
+
+ATTENtioN: distinguer le cas où l'on est l'auteur de la page et le cas où on veut copier ou bien commenter la page
+
+1bis: gérer l'affichage des notebooks en mode direct
+
+2-l'extension attend un message du parent. et transfert le contenu de l'éditeur en cours vers la base de donnée
+id_notebook est donné
+on crée un slug avec la cellule du titre
+
+3- créer une fonction pour trouver rapidement le contenu d'une cellule d'un notebook qui a une metadata type defini par une certaine valeur (genre type: author) - directement dans le json du notebook ou bien dans mongodb - à voir
+
+4- voir pour démarrer tout de suite le kernel - en utilisant le bon nom de kernel - possibilité de faire une option pour choisir au départ.
+
+5- voir les pages users comment les gérer. Un bon exemple
+Profile picture - username - 
+
+6 - mettre le jupyter classique à la place de Jupyterlab : plus simple gérer
+
+
