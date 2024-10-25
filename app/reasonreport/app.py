@@ -2,13 +2,15 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory
 from flask_restful import Api
 from config import Config
-from models import mongo, get_notebook, get_user_by_username, get_user_by_id
+from models import mongo, get_notebook, get_user_by_username, get_user_by_id, notebook_html
 from resources import (
     UserRegister, UserLogin, UserResource,
     NotebookCreate, NotebookSave, NotebookQuery, NotebookDelete
 )
 from utils import decode_token
 from bson.objectid import ObjectId
+
+
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -47,7 +49,7 @@ def index():
                 else:
                     notebook = None
                     is_author = False
-                return render_template('index.html', notebook=notebook, is_author=is_author)
+                return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author)
     return render_template('index.html', notebook=None, is_author=False)
 
 @app.route('/login')
@@ -77,7 +79,7 @@ def notebook(slug):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook, is_author=is_author)
+        return render_template('notebook.html', notebook=notebook_html(notebook), is_author=is_author)
     else:
         return render_template('notebook.html', notebook=None, is_author=False)
 
@@ -100,7 +102,7 @@ def notebookid(id):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook, is_author=is_author)
+        return render_template('notebook.html', notebook=notebook_html(notebook), is_author=is_author)
     else:
         return render_template('notebook.html', notebook=None, is_author=False)
 

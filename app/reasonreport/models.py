@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from bson.objectid import ObjectId
 from slugify import slugify
 import nbformat
+from nbconvert import HTMLExporter
 from datetime import datetime
 
 mongo = PyMongo()
@@ -112,3 +113,9 @@ def get_notebook(query):
 
 def delete_notebook(notebook_id):
     mongo.db.notebooks.delete_one({'_id': ObjectId(notebook_id)})
+
+def notebook_html(notebook):
+    notebook_content = nbformat
+    html_exporter = HTMLExporter()
+    (body, resources) = html_exporter.from_notebook_node(notebook_content)
+    return body
