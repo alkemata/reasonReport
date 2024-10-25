@@ -29,11 +29,24 @@
                     }
                 });
 
-                // Append the "Publish" button to the auth-buttons div
-                document.getElementById('auth-buttons').appendChild(publishButton);
-            }
-        }          
+                // Create the "Quit Editing" button
+                const quitEditingButton = document.createElement('button');
+                quitEditingButton.id = 'quit-editing-button';
+                quitEditingButton.innerText = 'Quit Editing';
+                quitEditingButton.style.display = 'inline-block';
 
+                // Add click event listener to the quit editing button
+                quitEditingButton.addEventListener('click', () => {
+                    // Redirect to the /id page
+                    window.location.href = '/id/'+documentId;
+                });
+
+                // Append the "Publish" and "Quit Editing" buttons to the auth-buttons div
+                const authButtonsDiv = document.getElementById('auth-buttons');
+                authButtonsDiv.appendChild(publishButton);
+                authButtonsDiv.appendChild(quitEditingButton);
+            }
+        }
         const iframe = document.getElementById('jupyterlite-iframe');
         console.log('parent: waiting for readiness')
         // Ensure the iframe is loaded before sending the message
@@ -42,7 +55,7 @@
                 console.log('parent window: message received - send data', event)
                 // Use postMessage to send data to the iframe
                 iframe.contentWindow.postMessage({  documentId: documentId });
-
+                replaceCreateButtonWithPublish();
             }
             )
         
