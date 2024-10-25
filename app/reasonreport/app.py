@@ -82,7 +82,7 @@ def notebook(slug):
         return render_template('notebook.html', notebook=None, is_author=False)
 
 @app.route('/id/<id>')
-def notebook(slug):
+def notebookid(id):
     token = request.cookies.get('token') or session.get('token')
     user_id = None
     if token:
