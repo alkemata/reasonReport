@@ -81,8 +81,8 @@ def save_notebook(notebook_id, notebook_json):
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
     
     # Ensure indexes
-    mongo.db.notebooks.create_index([('slug', 1)], unique=True)
-    mongo.db.notebooks.create_index([('author', 1)])
+    #mongo.db.notebooks.create_index([('slug', 1)], unique=True)
+    #mongo.db.notebooks.create_index([('author', 1)])
     return
 
 def get_notebook(query):
