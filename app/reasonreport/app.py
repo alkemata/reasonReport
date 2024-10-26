@@ -10,6 +10,7 @@ from resources import (
 from utils import decode_token
 from bson.objectid import ObjectId
 from flask_debugtoolbar import DebugToolbarExtension
+import logging
 
 
 
