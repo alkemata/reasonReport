@@ -48,13 +48,15 @@ def create_notebook(author_id):
     cells = []
     
     # Author Cell
-    cells.append(nbformat.v4.new_markdown_cell(f"<!-- author: {author_id} -->"))
+    cells.append(nbformat.v4.new_markdown_cell("Author:")
+    cells.append(nbformat.v4.new_markdown_cell(f"{author_id}"))
     
     # Date Cell
-    cells.append(nbformat.v4.new_markdown_cell(f"<!-- date: {datetime.utcnow().isoformat()} -->"))
+    cells.append(nbformat.v4.new_markdown_cell("Date of creation:")
+    cells.append(nbformat.v4.new_markdown_cell(f"{datetime.utcnow().isoformat()}"))
     
     # Title Cell
-    cells.append(nbformat.v4.new_markdown_cell(f"<!-- title: personal page -->"))
+    cells.append(nbformat.v4.new_markdown_cell(f"# Please enter the title here #"))
     
     nb['cells'] = cells
     
@@ -65,7 +67,7 @@ def create_notebook(author_id):
         'notebook': notebook_json,
         'author': author_id,
         'date': datetime.utcnow(),
-        'title': "personal page",
+        'title': "",
         'slug': "",  # To be updated after registration
     }
     
@@ -75,9 +77,16 @@ def create_notebook(author_id):
 def save_notebook(notebook_id, notebook_json):
     notebook_json = notebook_json.replace("'", '"')
     nb = nbformat.from_dict(json.loads(notebook_json))
+    result=find_metadata_cells(json.loads(notebook_json))
+    if result=="error":
+        return "error"
     #slug = slugify(title)
     update_fields = {
-        'notebook': nb
+        'notebook': nb,
+        'author': result['author'],
+        'slug':result['slug'],
+        'title':result['title'],
+        'date':result['date']
     }
     
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
@@ -85,7 +94,7 @@ def save_notebook(notebook_id, notebook_json):
     # Ensure indexes
     #mongo.db.notebooks.create_index([('slug', 1)], unique=True)
     #mongo.db.notebooks.create_index([('author', 1)])
-    return
+    return 'ok'
 
 def get_notebook(query):
     if isinstance(query, str) and ObjectId.is_valid(query):
@@ -103,3 +112,66 @@ def notebook_html(notebook):
     html_exporter.template_name = 'lab'
     (body, resources) = html_exporter.from_notebook_node(notebook_content)
     return body
+
+
+def find_cells_by_metadata(notebook_json, key, value):
+    """
+    Find cells in a Jupyter Notebook file with a given metadata key and value.
+
+    :param nb_path: Path to the Jupyter Notebook file (e.g., "notebook.ipynb").
+    :param key: Metadata key to search for (e.g., "tags").
+    :param value: Metadata value to match.
+    :return: List of cells that match the given metadata key and value.
+    """
+    matching_cells = []
+    for cell in notebook_data.get('cells', []):
+        metadata = cell.get('metadata', {})
+        
+        # Check if metadata contains the key and value
+        if key in metadata:
+            # If the key holds a list (like tags), check if the value is in the list
+            if isinstance(metadata[key], list) and value in metadata[key]:
+                matching_cells.append(cell)
+            # Otherwise, match directly to the value
+            elif metadata[key] == value:
+                matching_cells.append(cell)
+    return matching_cells
+
+def find_metadata_cells(nb_json):
+    """
+    Find cells with metadata "type" values of "title", "author", "date", or "summary".
+    Check that they are not empty and return required information if all are present.
+
+    :param nb_path: Path to the Jupyter Notebook file (e.g., "notebook.ipynb").
+    :return: A dictionary containing author, slug, and date if successful. Otherwise, raises an error.
+    """
+    required_types = ["title", "author", "date", "summary"]
+    metadata_values = {key: None for key in required_types}
+
+           notebook_data = nb_json
+
+    # Iterate through the notebook cells to find required metadata
+    for cell in notebook_data.get('cells', []):
+        metadata = cell.get('metadata', {})
+        if 'type' in metadata and metadata['type'] in required_types:
+            # Store the cell's content if it matches one of the required types
+            if cell.get('cell_type') == 'markdown' or cell.get('cell_type') == 'raw':
+                metadata_values[metadata['type']] = ''.join(cell.get('source', [])).strip()
+
+    # Check if any of the required metadata is missing or empty
+    missing_or_empty = [key for key, value in metadata_values.items() if not value]
+    if missing_or_empty:
+        return "error"
+
+    # Generate slug from title
+    slug = slugify(metadata_values['title'])
+
+    # Create and return the resulting structure
+    result = {
+        'author': metadata_values['author'],
+        'slug': slug,
+        'date': metadata_values['date'],
+        'title':metadata_values['title']
+    }
+
+    return result

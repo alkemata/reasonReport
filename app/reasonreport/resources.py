@@ -103,8 +103,11 @@ class NotebookSave(Resource):
             return {'message': 'Notebook not found'}, 404
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
-        save_notebook(notebook_id, args['notebook'])
-        return {'message': 'OK'}, 200
+        result=save_notebook(notebook_id, args['notebook'])
+        if result == 'ok':
+            return {'message': 'OK'}, 200
+        else:
+            return {'message':'Formatting issue'},500
 
 class NotebookQuery(Resource):
     @token_required
