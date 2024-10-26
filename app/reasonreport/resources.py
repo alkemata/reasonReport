@@ -7,6 +7,7 @@ from models import (
 )
 from utils import token_required,set_token_cookie
 from werkzeug.security import check_password_hash
+import json
 
 # User Registration
 class UserRegister(Resource):
