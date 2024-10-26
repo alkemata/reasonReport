@@ -2,7 +2,7 @@
 
 {% block content %}
     <div>
-        <iframe src="https://rr.alkemata.com/jupyterlite/" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"   width="100%" height="100%"></iframe>
+        <iframe src="https://rr.alkemata.com/jupyterlite/" class="iframe-container" id="jupyterlite-iframe" allow="encrypted-media" sandbox="allow-same-origin allow-scripts" frameborder="0"   width="100%" height="1000px"></iframe>
     </div> 
 
     <script>
@@ -32,7 +32,7 @@
                                 console.log("Message contains 'error'. Doing nothing.");
                                 }
 
-                                if (event.data === "ok") {
+                                if (message.data === "ok") {
                                     // Redirect to "/id" if the message contains "ok"
                                     window.location.href = "/id/{{notebook_id}}";
                                 }
