@@ -30,12 +30,11 @@
                             if (event.data === "error") {
                                 // Do nothing if the message contains "error"
                                 console.log("Message contains 'error'. Doing nothing.");
-                                return;
                                 }
 
                                 if (message.data === "ok") {
                                     // Redirect to "/id" if the message contains "ok"
-                                    window.location.href = "/id";
+                                    window.location.href = "/id/{{notebook_id}}";
                                 }
                                         });
                     }
