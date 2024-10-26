@@ -99,7 +99,7 @@ def notebookid(id):
     slug=notebook['slug']
     if slug: 
         try:
-            redirect('https://rr.alkemata.com/slug/'+slug)
+            return redirect('https://rr.alkemata.com/slug/'+slug)
         except e:
             app.logger.info(e)
     if notebook:
