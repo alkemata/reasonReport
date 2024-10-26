@@ -10,3 +10,4 @@ nbformat
 python-slugify
 PyJWT
 werkzeug
+flask-debugtoolbar

@@ -9,18 +9,21 @@ from resources import (
 )
 from utils import decode_token
 from bson.objectid import ObjectId
+from flask_debugtoolbar import DebugToolbarExtension
 
 
 
 app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
+app.debug=True
 
 # Initialize PyMongo
 mongo.init_app(app)
 
 # Initialize Flask-RESTful API
 api = Api(app)
+toolbar = DebugToolbarExtension(app)
 
 # API Routes
 api.add_resource(UserRegister, '/api/register')
