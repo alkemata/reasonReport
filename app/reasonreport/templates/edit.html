@@ -30,7 +30,7 @@
                             if (event.data === "error") {
                                 // Do nothing if the message contains "error"
                                 console.log("Message contains 'error'. Doing nothing.");
-                                }
+                                 }
 
                                 if (event.data === "ok") {
                                     // Redirect to "/id" if the message contains "ok"
@@ -66,10 +66,12 @@
             if (!iframeLoaded) {
                 iframeLoaded = true;
                 window.addEventListener('message', function(event) {
+                    if (event.data === "ready") {
                     console.log('parent window: message received - send data', event)
                     // Use postMessage to send data to the iframe
                     iframe.contentWindow.postMessage({  msgtype:'create',documentId: documentId });
                     replaceCreateButtonWithPublish();
+                    }
                                 }
             )
             }
