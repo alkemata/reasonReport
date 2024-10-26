@@ -97,7 +97,7 @@ class NotebookSave(Resource):
         parser.add_argument('notebook', required=True, help="Notebook JSON is required")
         args = parser.parse_args()
         
-        notebook = args['notebook']
+        notebook = get_notebook(notebook_id) # for checking authour
         if not notebook:
             return {'message': 'Notebook not found'}, 404
         
