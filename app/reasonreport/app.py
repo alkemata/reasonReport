@@ -71,6 +71,7 @@ def notebook(slug):
     user_id = None
     if token:
         user_id = decode_token(token)
+        app.logger.info(user_id)
         user = get_user_by_id(user_id)
     notebook = get_notebook(slug)
     if notebook:
