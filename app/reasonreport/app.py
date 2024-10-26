@@ -105,7 +105,7 @@ def notebookid(id):
                 # Set an authentication cookie
                 response.set_cookie('jwt_token', value=token, httponly=True, secure=True,samesite='Strict')
                 return response
-            except e:
+            except Exception as e:
                 app.logger.info(e)
         notebook['_id'] = str(notebook['_id'])
         is_author = False
