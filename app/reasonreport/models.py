@@ -73,10 +73,9 @@ def create_notebook(author_id):
 
 def save_notebook(notebook_id, notebook_json):
     nb = nbformat.from_dict(notebook_json)
-    slug = slugify(title)
+    #slug = slugify(title)
     update_fields = {
-        'notebook': nb,
-         'slug': slug
+        'notebook': nb
     }
     
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
