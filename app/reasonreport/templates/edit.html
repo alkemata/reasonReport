@@ -32,7 +32,7 @@
                                 console.log("Message contains 'error'. Doing nothing.");
                                 }
 
-                                if (message.data === "ok") {
+                                if (event.data === "ok") {
                                     // Redirect to "/id" if the message contains "ok"
                                     window.location.href = "/id/{{notebook_id}}";
                                 }
