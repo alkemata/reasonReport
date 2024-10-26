@@ -98,7 +98,7 @@ def notebookid(id):
     notebook = get_notebook(id)
     slug=notebook['slug']
     if slug: 
-        redirect(url_for('notebook',slug=slug))
+        redirect('https://rr.alkemata.com/slug/'+slug)
     if notebook:
         notebook['_id'] = str(notebook['_id'])
         is_author = False
