@@ -50,13 +50,20 @@ def create_notebook(author_id):
     # Author Cell
     cells.append(nbformat.v4.new_markdown_cell("Author:")
     cells.append(nbformat.v4.new_markdown_cell(f"{author_id}"))
+    cells[-1].metadata['type']="author"
     
     # Date Cell
     cells.append(nbformat.v4.new_markdown_cell("Date of creation:")
     cells.append(nbformat.v4.new_markdown_cell(f"{datetime.utcnow().isoformat()}"))
-    
+    cells[-1].metadata['type']="date"
     # Title Cell
     cells.append(nbformat.v4.new_markdown_cell(f"# Please enter the title here #"))
+    cells[-1].metadata['type']="slug"
+
+    # Summary
+     cells.append(nbformat.v4.new_markdown_cell("Summary:")
+    cells.append(nbformat.v4.new_markdown_cell(f" Please enter here a short introduction for your article "))
+    cells[-1].metadata['type']="summary"
     
     nb['cells'] = cells
     
