@@ -72,7 +72,7 @@ def create_notebook(author_id):
     return str(result.inserted_id)
 
 def save_notebook(notebook_id, notebook_json):
-    nb = nbformat.from_dict(notebook_json)
+    nb = nbformat.from_dict(json.loads(notebook_json))
     #slug = slugify(title)
     update_fields = {
         'notebook': nb
