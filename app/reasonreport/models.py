@@ -58,7 +58,7 @@ def create_notebook(author_id):
     cells[-1].metadata['type']="date"
     # Title Cell
     cells.append(nbformat.v4.new_markdown_cell(f"# Please enter the title here #"))
-    cells[-1].metadata['type']="slug"
+    cells[-1].metadata['type']="title"
 
     # Summary
     cells.append(nbformat.v4.new_markdown_cell("Summary:"))
@@ -87,7 +87,6 @@ def save_notebook(notebook_id, notebook_json):
     result=find_metadata_cells(json.loads(notebook_json))
     if result=="error":
         return "error"
-    #slug = slugify(title)
     update_fields = {
         'notebook': nb,
         'author': result['author'],
