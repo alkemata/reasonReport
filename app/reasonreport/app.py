@@ -104,7 +104,7 @@ def notebookid(id):
                 response = make_response(redirect('https://rr.alkemata.com/slug/'+slug))
                 # Set an authentication cookie
                 response.set_cookie('jwt_token', value=str(token), httponly=True, secure=True,samesite='Strict')
-                return response
+                #return response
             except Exception as e:
                 app.logger.info(e)
         notebook['_id'] = str(notebook['_id'])
