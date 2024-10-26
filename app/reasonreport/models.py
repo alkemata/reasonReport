@@ -72,7 +72,7 @@ def create_notebook(author_id):
     return str(result.inserted_id)
 
 def save_notebook(notebook_id, notebook_json):
-    nb = nbformat.reads(notebook_json, as_version=4)
+    nb = nbformat.from_dict(notebook_json)
     cells = nb['cells']
     
     # Extract tagged cells
