@@ -48,12 +48,12 @@ def create_notebook(author_id):
     cells = []
     
     # Author Cell
-    cells.append(nbformat.v4.new_markdown_cell("Author:")
+    cells.append(nbformat.v4.new_markdown_cell("Author:"))
     cells.append(nbformat.v4.new_markdown_cell(f"{author_id}"))
     cells[-1].metadata['type']="author"
     
     # Date Cell
-    cells.append(nbformat.v4.new_markdown_cell("Date of creation:")
+    cells.append(nbformat.v4.new_markdown_cell("Date of creation:"))
     cells.append(nbformat.v4.new_markdown_cell(f"{datetime.utcnow().isoformat()}"))
     cells[-1].metadata['type']="date"
     # Title Cell
@@ -61,7 +61,7 @@ def create_notebook(author_id):
     cells[-1].metadata['type']="slug"
 
     # Summary
-     cells.append(nbformat.v4.new_markdown_cell("Summary:")
+    cells.append(nbformat.v4.new_markdown_cell("Summary:"))
     cells.append(nbformat.v4.new_markdown_cell(f" Please enter here a short introduction for your article "))
     cells[-1].metadata['type']="summary"
     
@@ -155,7 +155,7 @@ def find_metadata_cells(nb_json):
     required_types = ["title", "author", "date", "summary"]
     metadata_values = {key: None for key in required_types}
 
-           notebook_data = nb_json
+    notebook_data = nb_json
 
     # Iterate through the notebook cells to find required metadata
     for cell in notebook_data.get('cells', []):
