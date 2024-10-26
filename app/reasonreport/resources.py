@@ -101,10 +101,9 @@ class NotebookSave(Resource):
         notebook = get_notebook(notebook_id) # for checking authour
         if not notebook:
             return {'message': 'Notebook not found'}, 404
-        raise ValueError(str(args['notebook']))
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
-        save_notebook(notebook_id, json.loads(args['notebook']))
+        save_notebook(notebook_id, args['notebook'])
         return {'message': 'OK'}, 200
 
 class NotebookQuery(Resource):

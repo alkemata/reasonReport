@@ -103,6 +103,7 @@ def save_notebook(notebook_id, notebook_json):
     # Ensure indexes
     mongo.db.notebooks.create_index([('slug', 1)], unique=True)
     mongo.db.notebooks.create_index([('author', 1)])
+    return
 
 def get_notebook(query):
     if isinstance(query, str) and ObjectId.is_valid(query):
