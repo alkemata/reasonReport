@@ -84,9 +84,9 @@ def notebook(slug):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author,id=id)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author,id=slug)
     else:
-        return render_template('notebook.html', notebook=None, is_author=False,id=id)
+        return render_template('notebook.html', notebook=None, is_author=False,id=slug)
 
 @app.route('/id/<id>')
 def notebookid(id):
