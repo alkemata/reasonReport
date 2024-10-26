@@ -69,11 +69,11 @@ def register():
 def notebook(slug):
     token = request.cookies.get('token') or session.get('token')
     user_id = None
+    app.logger.info(token)
     if token:
         user_id = decode_token(token)
-        app.logger.info(user_id)
         user = get_user_by_id(user_id)
-        app.logger.info(uslug)
+        app.logger.info(slug)
         notebook = get_notebook(slug)
         if notebook:
             notebook['_id'] = str(notebook['_id'])
