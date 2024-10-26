@@ -24,6 +24,7 @@ mongo.init_app(app)
 # Initialize Flask-RESTful API
 api = Api(app)
 toolbar = DebugToolbarExtension(app)
+app.logger.setLevel(logging.DEBUG)
 
 # API Routes
 api.add_resource(UserRegister, '/api/register')
@@ -95,6 +96,7 @@ def notebookid(id):
         user = get_user_by_id(user_id)
     notebook = get_notebook(id)
     slug=notebook['slug']
+    app.logger.debug(f'My variable value: {slug}')
     if slug: 
         redirect(url_for('notebook',slug='slug'))
     if notebook:
