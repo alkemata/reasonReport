@@ -6,6 +6,7 @@ from slugify import slugify
 import nbformat
 from nbconvert import HTMLExporter
 from datetime import datetime
+import json
 
 mongo = PyMongo()
 
