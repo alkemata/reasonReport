@@ -25,7 +25,7 @@
                     // Send a message to the iframe when the "Publish" button is clicked
                     const iframe = document.querySelector('iframe'); // Assuming the iframe is on the page
                     if (iframe) {
-                        iframe.contentWindow.postMessage({msgtype:'publish',,documentId: documentId });
+                        iframe.contentWindow.postMessage({msgtype:'publish',documentId: documentId });
                         window.addEventListener('message', function(event) {
                             if (event.data === "error") {
                                 // Do nothing if the message contains "error"
