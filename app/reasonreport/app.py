@@ -96,10 +96,11 @@ def notebookid(id):
         user_id = decode_token(token)
         user = get_user_by_id(user_id)
     notebook = get_notebook(id)
-    slug=notebook['slug']
+
 
     if notebook:
         if slug: 
+            slug=notebook['slug']
             try:
                 response = make_response(redirect('https://rr.alkemata.com/slug/'+slug))
                 # Set an authentication cookie
