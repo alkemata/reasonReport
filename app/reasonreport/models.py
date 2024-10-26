@@ -114,8 +114,7 @@ def delete_notebook(notebook_id):
 
 def notebook_html(notebook):
     notebook_content = nbformat.from_dict(notebook)
-    html_exporter = HTMLExporter()
-    html_exporter.template_name = 'lab'
+    html_exporter = HTMLExporter(template_name="classic")
     (body, resources) = html_exporter.from_notebook_node(notebook_content)
     return body
 
