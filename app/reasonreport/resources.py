@@ -104,7 +104,7 @@ class NotebookSave(Resource):
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
         
-        save_notebook(notebook_id, args['notebook'])
+        save_notebook(notebook_id, json.loads(args['notebook']))
         return {'message': 'OK'}, 200
 
 class NotebookQuery(Resource):
