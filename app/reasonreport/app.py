@@ -97,12 +97,13 @@ def notebookid(id):
         user = get_user_by_id(user_id)
     notebook = get_notebook(id)
     slug=notebook['slug']
-    if slug: 
-        try:
-            return redirect('https://rr.alkemata.com/slug/'+slug)
-        except e:
-            app.logger.info(e)
+
     if notebook:
+        if slug: 
+            try:
+                return redirect('https://rr.alkemata.com/slug/'+slug)
+            except e:
+                app.logger.info(e)
         notebook['_id'] = str(notebook['_id'])
         is_author = False
         if user_id and notebook['author'] == str(user_id):
