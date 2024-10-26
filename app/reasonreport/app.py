@@ -73,21 +73,21 @@ def notebook(slug):
         user_id = decode_token(token)
         app.logger.info(user_id)
         user = get_user_by_id(user_id)
-    notebook = get_notebook(slug)
-    if notebook:
-        notebook['_id'] = str(notebook['_id'])
-        is_author = False
-        if user_id and notebook['author'] == str(user_id):
-            app.logger.info(user_id)
-            app.logger.info(notebook['author'])
-            is_author = True
-        # Fetch author's username
-        author = get_user_by_id(notebook['author'])
-        if author:
-            notebook['author_username'] = author['username']
-        else:
-            notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author,id=slug)
+        notebook = get_notebook(slug)
+        if notebook:
+            notebook['_id'] = str(notebook['_id'])
+            is_author = False
+            if user_id and notebook['author'] == str(user_id):
+                app.logger.info(user_id)
+                app.logger.info(notebook['author'])
+                is_author = True
+            # Fetch author's username
+            author = get_user_by_id(notebook['author'])
+            if author:
+                notebook['author_username'] = author['username']
+            else:
+                notebook['author_username'] = 'Unknown'
+            return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author,id=slug)
     else:
         return render_template('notebook.html', notebook=None, is_author=False,id=slug)
 
