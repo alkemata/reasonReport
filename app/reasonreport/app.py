@@ -91,6 +91,9 @@ def notebookid(id):
         user_id = decode_token(token)
         user = get_user_by_id(user_id)
     notebook = get_notebook(id)
+    slug=noteboo['slug']
+    if slug: 
+        redirect(url_for('notebook',slug='slug'))
     if notebook:
         notebook['_id'] = str(notebook['_id'])
         is_author = False
