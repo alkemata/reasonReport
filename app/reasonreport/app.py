@@ -84,7 +84,7 @@ def notebook(slug):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook), is_author=is_author)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author)
     else:
         return render_template('notebook.html', notebook=None, is_author=False)
 
