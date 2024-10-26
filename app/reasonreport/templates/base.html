@@ -16,6 +16,12 @@
                 <button id="login-button" onclick="showLogin()">Login</button>
                 <button id="register-button" onclick="showRegister()">Register</button>
                 <span id="welcome-message" style="display: none;"></span>
+                {% if is_author %}
+                <button id="create-button" onclick="editNotebook()">Edit Notebook</button>
+            {% else %}
+                <!-- Hide the button -->
+                <button id="create-button" style="display: none;" onclick="editNotebook({{notebook}})">Edit Notebook</button>
+            {% endif %}
                 <button id="create-button" style="display: none;" onclick="createNotebook()">Create Notebook</button>
                 <button id="logout-button" style="display: none;" onclick="logout()">Logout</button>
             </div>

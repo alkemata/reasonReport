@@ -46,6 +46,12 @@ function logout() {
     window.location.href = '/';
 }
 
+// Edit notebook
+async function editNotebook(id) {
+    window.location.href = 'https://rr.alkemata.com/edit/'+id;
+}
+
+
 // Create a new notebook
 async function createNotebook() {
     const token = getToken();

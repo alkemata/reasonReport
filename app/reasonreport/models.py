@@ -150,7 +150,7 @@ def find_metadata_cells(nb_json):
     :param nb_path: Path to the Jupyter Notebook file (e.g., "notebook.ipynb").
     :return: A dictionary containing author, slug, and date if successful. Otherwise, raises an error.
     """
-    required_types = ["title", "author", "date", "summary"]
+    required_types = ["title", "author", "date"]
     metadata_values = {key: None for key in required_types}
 
     notebook_data = nb_json
