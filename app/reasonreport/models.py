@@ -73,29 +73,10 @@ def create_notebook(author_id):
 
 def save_notebook(notebook_id, notebook_json):
     nb = nbformat.from_dict(notebook_json)
-    cells = nb['cells']
-    
-    # Extract tagged cells
-    extracted = {}
-    for cell in cells:
-        if cell['cell_type'] == 'markdown' and cell['source'].startswith('<!--') and cell['source'].endswith('-->'):
-            content = cell['source'][4:-3].strip()  # Remove <!-- and -->
-            if ':' in content:
-                key, value = content.split(':', 1)
-                extracted[key.strip()] = value.strip()
-    
-    title = extracted.get('title', 'Untitled')
-    author = extracted.get('author', '')
-    date = extracted.get('date', '')
-    
     slug = slugify(title)
-    
     update_fields = {
-        'notebook': notebook_json,
-        'title': title,
-        'author': author,
-        'date': date,
-        'slug': slug
+        'notebook': nb,
+         'slug': slug
     }
     
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
