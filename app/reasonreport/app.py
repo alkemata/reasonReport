@@ -97,8 +97,8 @@ def notebookid(id):
         user = get_user_by_id(user_id)
     notebook = get_notebook(id)
     slug=notebook['slug']
-    app.logger.debug(f'My variable value: {slug}')
     if slug: 
+        app.logger.debug(f'My variable value: {slug}')
         redirect(url_for('notebook',slug='slug'))
     if notebook:
         notebook['_id'] = str(notebook['_id'])
