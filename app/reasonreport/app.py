@@ -99,8 +99,8 @@ def notebookid(id):
 
 
     if notebook:
-        if slug: 
-            slug=notebook['slug']
+        slug=notebook['slug']
+        if slug:
             try:
                 response = make_response(redirect('https://rr.alkemata.com/slug/'+slug))
                 # Set an authentication cookie
