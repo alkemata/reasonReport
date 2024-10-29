@@ -16,15 +16,19 @@
                 <!-- These buttons will be managed by JavaScript -->
                 <button id="login-button" onclick="showLogin()">Login</button>
                 <button id="register-button" onclick="showRegister()">Register</button>
-                <span id="welcome-message" style="display: none;"></span>
+                {% if is_authenticated %}
+                <span id="welcome-message" style="display: inline;">{{ user }}</span>
+                {% endif %}
                 {% if is_author %}
                 <button id="edit-button" onclick="editNotebook({{id}})">Edit Notebook</button>
             {% else %}
                 <!-- Hide the button -->
                 <button id="edit-button" style="display: none;" onclick="editNotebook()">Edit Notebook</button>
             {% endif %}
+                {% if is_authenticated %}
                 <button id="create-button" style="display: none;" onclick="createNotebook()">Create Notebook</button>
                 <button id="logout-button" style="display: none;" onclick="logout()">Logout</button>
+                {% endif %}
             </div>
         </nav>
     </header>
@@ -32,7 +36,7 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script>
+
         // Check for token on page load to manage user state
         document.addEventListener('DOMContentLoaded', () => {
 
@@ -58,7 +62,7 @@
                 document.getElementById('welcome-message').style.display = 'none';
             }
         });
-
+        <script>
         // Function to handle logout
         function logout() {
             sessionStorage.removeItem('token'); // Remove token from sessionStorage

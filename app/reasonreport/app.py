@@ -54,7 +54,7 @@ def index():
                 else:
                     notebook = None
                     is_author = False
-                return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author,is_authenticated=is_authenticated)
+                return render_template('index.html', notebook=notebook_html(notebook), user=user,is_author=is_author,is_authenticated=is_authenticated)
     return render_template('index.html', notebook=None, is_author=False)
 
 @app.route('/login')
