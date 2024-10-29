@@ -5,7 +5,7 @@ from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
     create_notebook, save_notebook, get_notebook, delete_notebook
 )
-from utils import token_required,set_token_cookie
+from utils import token_required,generate_token
 from werkzeug.security import check_password_hash
 import json
 
