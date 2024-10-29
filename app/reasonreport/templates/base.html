@@ -11,11 +11,11 @@
     <header>
         <nav>
             <a href="{{ url_for('index') }}">Home</a>
-            {{is_author}}
+            
             <div id="auth-buttons">
 
                 {% if is_authenticated %}
-                <span id="welcome-message" style="display: inline;">{{ user }}</span>
+                <span id="welcome-message" style="display: inline;">{{ username }}</span>
                 {% endif %}
                 {% if is_author %}
                 <button id="edit-button" onclick="editNotebook({{id}})">Edit Notebook</button>
