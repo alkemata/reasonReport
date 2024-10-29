@@ -37,7 +37,7 @@ class UserLogin(Resource):
             return {'message': 'Invalid credentials'}, 401
         
         # Generate a response and set the token cookie
-        response = {'message': 'Login successful'}
+        response = response = make_response({'message': 'Login successful'},200)
         token = generate_token(str(user['_id']))
         response.set_cookie(
         key='jwt_token',
