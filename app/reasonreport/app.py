@@ -42,7 +42,7 @@ def index():
     is_authenticated = False
     if token:
         user_id = decode_token(token)
-        is_authenticaed=True
+        is_authenticated=True
         if user_id:
             user = get_user_by_id(user_id)
             if user:
