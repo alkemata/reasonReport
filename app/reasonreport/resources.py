@@ -49,7 +49,7 @@ class UserLogin(Resource):
         path='/'              # Path for the cookie, default is root
     )
        # header=set_token_cookie(response,str(user['_id']))
-        return response, 200,  header
+        return response
         
 
 # User CRUD Operations
