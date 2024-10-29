@@ -6,7 +6,7 @@ const API_BASE = '/api';
 
 // Function to get token from session storage
 function getToken() {
-    return sessionStorage.getItem('token');
+    return sessionStorage.getItem('token' );
 }
 
 // Function to set token in session storage
@@ -113,8 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await response.json();
                 if (response.status === 200) {
-                    setToken(data.token);
-                    setUsername(username);
+                     setUsername(username);
                     window.location.href = '/';
                 } else {
                     document.getElementById('login-message').innerText = data.message;

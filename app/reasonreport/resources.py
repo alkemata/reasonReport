@@ -38,7 +38,17 @@ class UserLogin(Resource):
         
         # Generate a response and set the token cookie
         response = {'message': 'Login successful'}
-        header=set_token_cookie(response,str(user['_id']))
+        token = generate_token(str(user['_id']))
+        response.set_cookie(
+        key='jwt_token',
+        value=token,
+        httponly=True,        # Prevent JavaScript access for security
+        secure=True,          # Ensure it's only sent over HTTPS (set to False for local development if needed)
+        samesite='Strict',    # Help prevent CSRF attacks
+        max_age=3600,         # Expiration time in seconds (optional, can also use `expires`)
+        path='/'              # Path for the cookie, default is root
+    )
+       # header=set_token_cookie(response,str(user['_id']))
         return response, 200,  header
         
 
