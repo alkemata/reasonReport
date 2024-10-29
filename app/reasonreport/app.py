@@ -65,7 +65,7 @@ def register():
 
 @app.route('/slug/<slug>')
 def notebook(slug):
-    token = request.cookies.get('token') or session.get('token')
+    token = request.cookies.get('jwt_token') 
     user_id = None
     if token:
         user_id = decode_token(token)
@@ -90,7 +90,7 @@ def notebook(slug):
 
 @app.route('/id/<id>')
 def notebookid(id):
-    token = request.cookies.get('token') or session.get('token')
+    token = request.cookies.get('jwt_token') or session.get('token')
     user_id = None
     if token:
         user_id = decode_token(token)
