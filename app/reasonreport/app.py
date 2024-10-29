@@ -90,7 +90,7 @@ def notebook(slug):
 
 @app.route('/id/<id>')
 def notebookid(id):
-    token = request.cookies.get('jwt_token') or session.get('token')
+    token = request.cookies.get('jwt_token') 
     user_id = None
     if token:
         user_id = decode_token(token)
@@ -104,7 +104,7 @@ def notebookid(id):
                 # Set an authentication cookie
                 if token:
                     response.set_cookie('jwt_token', value=str(token), httponly=True, secure=True, samesite='Strict')
-                return response  # Ensure response is returned
+                #return response  # Ensure response is returned
             except Exception as e:
                 app.logger.error(f"Redirection failed: {e}")
 
