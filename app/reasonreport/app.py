@@ -55,7 +55,7 @@ def index():
                     notebook = None
                     is_author = False
                 return render_template('index.html', notebook=notebook_html(notebook), user=user,is_author=is_author,is_authenticated=is_authenticated)
-    return render_template('index.html', notebook=None, is_author=False,user=user,is_authenticated=is_authenticated)
+        return render_template('index.html', notebook=None, is_author=False,user_id=user_id,is_authenticated=is_authenticated)
 
 @app.route('/login')
 def login():
