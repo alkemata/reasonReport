@@ -70,8 +70,10 @@ def index():
         if notebook:
             notebook['_id'] = str(notebook['_id'])
             is_author = True
-
-    return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author, **user_info)
+            return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author, **user_info)
+        else:
+            render_template('error.html',error="Notebook not found",is_author=is_author,**user_infi)
+    render_template('error.html',error="No personnal page",is_author=is_author,**user_infi)
 
 @app.route('/login')
 def login():
