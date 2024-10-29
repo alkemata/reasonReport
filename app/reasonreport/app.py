@@ -55,7 +55,7 @@ def index():
                     notebook = None
                     is_author = False
                 return render_template('index.html', notebook=notebook_html(notebook), user=user,is_author=is_author,is_authenticated=is_authenticated)
-    return render_template('index.html', notebook=None, is_author=False)
+    return render_template('index.html', notebook=None, is_author=False,user=user,is_authenticated=is_authenticated))
 
 @app.route('/login')
 def login():
@@ -88,7 +88,7 @@ def notebook(slug):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, id=slug,is_authenticated=is_authenticated)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), user_id=user_id, is_author=is_author, id=slug,is_authenticated=is_authenticated)
     else:
         return render_template('notebook.html', notebook=None, is_author=False, id=slug)
 
@@ -123,7 +123,7 @@ def notebookid(id):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, id=id,is_authenticated=is_authenticated)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), user_id=user_id,is_author=is_author, id=id,is_authenticated=is_authenticated)
     else:
         return render_template('notebook.html', notebook=None, is_author=False, id=id)
 
@@ -136,7 +136,7 @@ def edit_notebook(identifier):
         user_id = decode_token(token)
         is_authenticated=True
     # This route serves the JupyterLite editor
-    return render_template('edit.html', notebook_id=identifier,is_authenticated=is_authenticated,user_id=user_id)
+    return render_template('edit.html', user_id=user_id,notebook_id=identifier,is_authenticated=is_authenticated,user_id=user_id)
 
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
 
