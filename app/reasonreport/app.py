@@ -136,7 +136,7 @@ def edit_notebook(identifier):
         user_id = decode_token(token)
         is_authenticated=True
     # This route serves the JupyterLite editor
-    return render_template('edit.html', user_id=user_id,notebook_id=identifier,is_authenticated=is_authenticated,user_id=user_id)
+    return render_template('edit.html', notebook_id=identifier,is_authenticated=is_authenticated,user_id=user_id)
 
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
 
