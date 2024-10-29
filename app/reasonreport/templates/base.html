@@ -35,9 +35,8 @@
     <script>
         // Check for token on page load to manage user state
         document.addEventListener('DOMContentLoaded', () => {
-            const token = sessionStorage.getItem('token'); // Retrieve token from sessionStorage
 
-            if (token) {
+            if ({{is_authenticated}}) {
                 // User is logged in, display appropriate buttons and welcome message
                 document.getElementById('login-button').style.display = 'none';
                 document.getElementById('register-button').style.display = 'none';

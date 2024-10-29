@@ -39,8 +39,10 @@ api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
 @app.route('/')
 def index():
     token = request.cookies.get('token') or session.get('token')
+    is_authenticated = False
     if token:
         user_id = decode_token(token)
+        is_authenticaed=True
         if user_id:
             user = get_user_by_id(user_id)
             if user:
@@ -52,7 +54,7 @@ def index():
                 else:
                     notebook = None
                     is_author = False
-                return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author)
+                return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author,is_authenticated=is_authenticated)
     return render_template('index.html', notebook=None, is_author=False)
 
 @app.route('/login')
@@ -67,8 +69,10 @@ def register():
 def notebook(slug):
     token = request.cookies.get('jwt_token') 
     user_id = None
+    is_authenticated=False
     if token:
         user_id = decode_token(token)
+        is_authenticated=True
     notebook = get_notebook(slug)
     if notebook:
         notebook['_id'] = str(notebook['_id'])
@@ -84,7 +88,7 @@ def notebook(slug):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, id=slug)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, id=slug,is_authenticated=is_authenticated)
     else:
         return render_template('notebook.html', notebook=None, is_author=False, id=slug)
 
@@ -92,21 +96,22 @@ def notebook(slug):
 def notebookid(id):
     token = request.cookies.get('jwt_token') 
     user_id = None
+    is_authenticated=False
     if token:
         user_id = decode_token(token)
-
+        is_authenticated=True
     notebook = get_notebook(id)
     if notebook:
         slug = notebook.get('slug')
-        if slug:
-            try:
-                response = make_response(redirect(f'https://rr.alkemata.com/slug/{slug}'))
+        #if slug:
+         #   try:
+         #       response = make_response(redirect(f'https://rr.alkemata.com/slug/{slug}'))
                 # Set an authentication cookie
-                if token:
-                    response.set_cookie('jwt_token', value=str(token), httponly=True, secure=True, samesite='Strict')
+              #  if token:
+               #     response.set_cookie('jwt_token', value=str(token), httponly=True, secure=True, samesite='Strict')
                 #return response  # Ensure response is returned
-            except Exception as e:
-                app.logger.error(f"Redirection failed: {e}")
+          #  except Exception as e:
+           #     app.logger.error(f"Redirection failed: {e}")
 
         notebook['_id'] = str(notebook['_id'])
         is_author = False
@@ -118,14 +123,20 @@ def notebookid(id):
             notebook['author_username'] = author['username']
         else:
             notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, id=id)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, id=id,is_authenticated=is_authenticated)
     else:
         return render_template('notebook.html', notebook=None, is_author=False, id=id)
 
 @app.route('/edit/<identifier>')
 def edit_notebook(identifier):
+    token = request.cookies.get('jwt_token') 
+    user_id = None
+    is_authenticated=False
+    if token:
+        user_id = decode_token(token)
+        is_authenticated=True
     # This route serves the JupyterLite editor
-    return render_template('edit.html', notebook_id=identifier)
+    return render_template('edit.html', notebook_id=identifier,is_authenticated=is_authenticated,user_id=user_id)
 
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
 
