@@ -1,6 +1,6 @@
 # app.py
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response
-from flask_restful import Api
+from flask_restful import Api, Resource
 from config import Config
 from models import mongo, get_notebook, get_user_by_username, get_user_by_id, notebook_html
 from resources import (
@@ -34,28 +34,44 @@ api.add_resource(NotebookSave, '/api/notebooks/save/<string:notebook_id>')
 api.add_resource(NotebookQuery, '/api/notebooks/query/<string:notebook_id>')
 api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
 
+# Function to handle token retrieval and user info extraction
+def get_user_info_from_token():
+    token = request.cookies.get('jwt_token') or session.get('token')
+    if token:
+        user_id = decode_token(token)
+        if user_id:
+            user = get_user_by_id(user_id)
+            if user:
+                return {
+                    'user_id': user_id,
+                    'username': user['username'],
+                    'user': user,
+                    'is_authenticated': True
+                }
+    return {
+        'user_id': None,
+        'username': None,
+        'user': None,
+        'is_authenticated': False
+    }
+
 # Frontend Routes
 
 @app.route('/')
 def index():
-    token = request.cookies.get('token') or session.get('token')
-    is_authenticated = False
-    if token:
-        user_id = decode_token(token)
-        is_authenticated=True
-        if user_id:
-            user = get_user_by_id(user_id)
-            if user:
-                # Attempt to get notebook by user's slug (username)
-                notebook = mongo.db.notebooks.find_one({'slug': user['username']})
-                if notebook:
-                    notebook['_id'] = str(notebook['_id'])
-                    is_author = True
-                else:
-                    notebook = None
-                    is_author = False
-                return render_template('index.html', notebook=notebook_html(notebook), user=user,is_author=is_author,is_authenticated=is_authenticated)
-        return render_template('index.html', notebook=None, is_author=False,user_id=user_id,is_authenticated=is_authenticated)
+    user_info = get_user_info_from_token()
+
+    notebook = None
+    is_author = False
+
+    if user_info['is_authenticated']:
+        # Attempt to get notebook by user's slug (username)
+        notebook = mongo.db.notebooks.find_one({'slug': user_info['username']})
+        if notebook:
+            notebook['_id'] = str(notebook['_id'])
+            is_author = True
+
+    return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author, **user_info)
 
 @app.route('/login')
 def login():
@@ -67,76 +83,46 @@ def register():
 
 @app.route('/slug/<slug>')
 def notebook(slug):
-    token = request.cookies.get('jwt_token') 
-    user_id = None
-    is_authenticated=False
-    if token:
-        user_id = decode_token(token)
-        is_authenticated=True
+    user_info = get_user_info_from_token()
     notebook = get_notebook(slug)
+
+    is_author = False
     if notebook:
         notebook['_id'] = str(notebook['_id'])
-        is_author = False
-        app.logger.info(is_author)
-        app.logger.info(user_id)
-        app.logger.info(notebook['author'] )
-        if user_id and notebook['author'] == str(user_id):
+        if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
             is_author = True
+
         # Fetch author's username
         author = get_user_by_id(notebook['author'])
-        if author:
-            notebook['author_username'] = author['username']
-        else:
-            notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), user_id=user_id, is_author=is_author, id=slug,is_authenticated=is_authenticated)
+        notebook['author_username'] = author['username'] if author else 'Unknown'
+
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, **user_info)
     else:
-        return render_template('notebook.html', notebook=None, is_author=False, id=slug)
+        return render_template('notebook.html', notebook=None, is_author=False, **user_info)
 
 @app.route('/id/<id>')
 def notebookid(id):
-    token = request.cookies.get('jwt_token') 
-    user_id = None
-    is_authenticated=False
-    if token:
-        user_id = decode_token(token)
-        is_authenticated=True
+    user_info = get_user_info_from_token()
     notebook = get_notebook(id)
-    if notebook:
-        slug = notebook.get('slug')
-        #if slug:
-         #   try:
-         #       response = make_response(redirect(f'https://rr.alkemata.com/slug/{slug}'))
-                # Set an authentication cookie
-              #  if token:
-               #     response.set_cookie('jwt_token', value=str(token), httponly=True, secure=True, samesite='Strict')
-                #return response  # Ensure response is returned
-          #  except Exception as e:
-           #     app.logger.error(f"Redirection failed: {e}")
 
+    is_author = False
+    if notebook:
         notebook['_id'] = str(notebook['_id'])
-        is_author = False
-        if user_id and notebook['author'] == str(user_id):
+        if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
             is_author = True
+
         # Fetch author's username
         author = get_user_by_id(notebook['author'])
-        if author:
-            notebook['author_username'] = author['username']
-        else:
-            notebook['author_username'] = 'Unknown'
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), user_id=user_id,is_author=is_author, id=id,is_authenticated=is_authenticated)
+        notebook['author_username'] = author['username'] if author else 'Unknown'
+
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, **user_info)
     else:
-        return render_template('notebook.html', notebook=None, is_author=False, id=id)
+        return render_template('notebook.html', notebook=None, is_author=False, **user_info)
 
 @app.route('/edit/<identifier>')
 def edit_notebook(identifier):
-    token = request.cookies.get('jwt_token') 
-    user_id = None
-    is_authenticated=False
-    if token:
-        user_id = decode_token(token)
-        is_authenticated=True
-    # This route serves the JupyterLite editor
-    return render_template('edit.html', notebook_id=identifier,is_authenticated=is_authenticated,user_id=user_id)
+    user_info = get_user_info_from_token()
+    return render_template('edit.html', notebook_id=identifier, **user_info)
 
 JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
 
