@@ -13,9 +13,7 @@
             <a href="{{ url_for('index') }}">Home</a>
             {{is_author}}
             <div id="auth-buttons">
-                <!-- These buttons will be managed by JavaScript -->
-                <button id="login-button" onclick="showLogin()">Login</button>
-                <button id="register-button" onclick="showRegister()">Register</button>
+
                 {% if is_authenticated %}
                 <span id="welcome-message" style="display: inline;">{{ user }}</span>
                 {% endif %}
@@ -26,8 +24,12 @@
                 <button id="edit-button" style="display: none;" onclick="editNotebook()">Edit Notebook</button>
             {% endif %}
                 {% if is_authenticated %}
-                <button id="create-button" style="display: none;" onclick="createNotebook()">Create Notebook</button>
-                <button id="logout-button" style="display: none;" onclick="logout()">Logout</button>
+                <button id="create-button" style="display: inline;" onclick="createNotebook()">Create Notebook</button>
+                <button id="logout-button" style="display: inline;" onclick="logout()">Logout</button>
+                {% else % }
+                                <!-- These buttons will be managed by JavaScript -->
+                                <button id="login-button" onclick="showLogin()">Login</button>
+                                <button id="register-button" onclick="showRegister()">Register</button>
                 {% endif %}
             </div>
         </nav>
