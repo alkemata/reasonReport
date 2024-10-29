@@ -73,6 +73,9 @@ def notebook(slug):
     if notebook:
         notebook['_id'] = str(notebook['_id'])
         is_author = False
+        app.logger.info(is_author)
+        app.logger.info(user_id)
+        app.logger.info(notebook['author'] )
         if user_id and notebook['author'] == str(user_id):
             is_author = True
         # Fetch author's username
