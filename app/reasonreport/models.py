@@ -83,7 +83,7 @@ def create_notebook(author_id):
 
 def save_notebook(notebook_id, notebook_json):
     #notebook_json = notebook_json.replace("'", '"')
-    nb = nbformat.from_dict(notebook_json)
+    nb = nbformat.from_dict(json.loads(notebook_json))
     result=find_metadata_cells(nb)
     if result=="error":
         return "error"
@@ -142,7 +142,7 @@ def find_cells_by_metadata(notebook_json, key, value):
                 matching_cells.append(cell)
     return matching_cells
 
-def find_metadata_cells(nb):
+def find_metadata_cells(notebook_data):
     """
     Find cells with metadata "type" values of "title", "author", "date", or "summary".
     Check that they are not empty and return required information if all are present.
@@ -152,8 +152,6 @@ def find_metadata_cells(nb):
     """
     required_types = ["title", "author", "date"]
     metadata_values = {key: None for key in required_types}
-
-    notebook_data = nb
 
     # Iterate through the notebook cells to find required metadata
     for cell in notebook_data.cells:
