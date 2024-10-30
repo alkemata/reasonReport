@@ -102,6 +102,14 @@ def login():
 def register():
     return render_template('register.html')
 
+@app.route('/create')
+def create():
+    user_info = get_user_info_from_token()
+    notebook_id = create_notebook(user_info['user_id'])
+    return render_template('edit.html', notebook_id=identifier, **user_info)
+
+
+
 @app.route('/slug/<slug>')
 def notebook(slug):
     user_info = get_user_info_from_token()

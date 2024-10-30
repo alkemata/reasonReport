@@ -46,52 +46,6 @@ function logout() {
     window.location.href = '/';
 }
 
-// Edit notebook
-async function editNotebook(id) {
-    window.location.href = 'https://rr.alkemata.com/edit/'+id;
-}
-
-
-// Create a new notebook
-async function createNotebook() {
-    const token = getToken();
-    if (!token) {
-        alert('You must be logged in to create a notebook.');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE}/notebooks`, {
-            method: 'POST',
-            credentials: 'include', // Include cookies in the request
-        });
-
-        if (response.status === 201) {
-            const data = await response.json();
-            const notebookId = data.notebook_id;
-            const slug = getUsername();
-            window.location.href = `/edit/${notebookId}`;
-        } else {
-            const error = await response.json();
-            alert(`Error: ${error.message}`);
-        }
-    } catch (err) {
-        console.error(err);
-        alert('An error occurred while creating the notebook.');
-    }
-}
-
-// Toggle JupyterLite iframe
-function toggleEdit(notebookId) {
-    const iframe = document.getElementById('jupyterlite-iframe');
-    if (iframe.style.display === 'none') {
-        iframe.style.display = 'block';
-        iframe.src = `/edit/${notebookId}`;
-    } else {
-        iframe.style.display = 'none';
-    }
-}
-
 // Event listeners for login and register forms
 document.addEventListener('DOMContentLoaded', () => {
 
