@@ -93,6 +93,7 @@ class NotebookSave(Resource):
         args = parser.parse_args()
         nb=request.get_json()
         print(nb)
+        current_app.logger.info(nb)
         
         notebook = get_notebook(notebook_id) # for checking authour
         if not notebook:
