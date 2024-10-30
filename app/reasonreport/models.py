@@ -84,7 +84,7 @@ def create_notebook(author_id):
 def save_notebook(notebook_id, notebook_json):
     #notebook_json = notebook_json.replace("'", '"')
     nb = nbformat.from_dict(notebook_json)
-    result=find_metadata_cells(notebook_json)
+    result=find_metadata_cells(nb)
     if result=="error":
         return "error"
     update_fields = {
@@ -142,7 +142,7 @@ def find_cells_by_metadata(notebook_json, key, value):
                 matching_cells.append(cell)
     return matching_cells
 
-def find_metadata_cells(nb_json):
+def find_metadata_cells(nb):
     """
     Find cells with metadata "type" values of "title", "author", "date", or "summary".
     Check that they are not empty and return required information if all are present.
@@ -153,15 +153,15 @@ def find_metadata_cells(nb_json):
     required_types = ["title", "author", "date"]
     metadata_values = {key: None for key in required_types}
 
-    notebook_data = nb_json
+    notebook_data = nb
 
     # Iterate through the notebook cells to find required metadata
-    for cell in notebook_data.get('cells', []):
-        metadata = cell.get('metadata', {})
+    for cell in notebook_data.cells:
+        metadata = cell.metadata
         if 'type' in metadata and metadata['type'] in required_types:
             # Store the cell's content if it matches one of the required types
-            if cell.get('cell_type') == 'markdown' or cell.get('cell_type') == 'raw':
-                metadata_values[metadata['type']] = ''.join(cell.get('source', [])).strip()
+            if cell.cell_type == 'markdown' or cell.cell_type == 'raw':
+                metadata_values[metadata['type']] = ''.join(cell.source).strip()
 
     # Check if any of the required metadata is missing or empty
     missing_or_empty = [key for key, value in metadata_values.items() if not value]
