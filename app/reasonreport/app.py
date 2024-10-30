@@ -35,7 +35,7 @@ api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
 
 # Function to handle token retrieval and user info extraction
 def get_user_info_from_token():
-    token = request.cookies.get('jwt_token') or session.get('token')
+    token = request.cookies.get('jwt_token1')
     if token:
         user_id = decode_token(token)
         if user_id:
@@ -85,7 +85,7 @@ def login():
             next_page = request.args.get('next')
             response=redirect(next_page)
             response.set_cookie(
-            key='jwt_token',
+            key='jwt_token1',
             value=token,
             httponly=True,        # Prevent JavaScript access for security
             secure=True,          # Ensure it's only sent over HTTPS (set to False for local development if needed)

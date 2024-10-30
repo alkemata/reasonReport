@@ -26,7 +26,7 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         #token = request.headers.get('Authorization', '').replace('Bearer ', '')
-        token = request.cookies.get('jwt_token')
+        token = request.cookies.get('jwt_token1')
         if not token:
             return {'message': 'Token is missing!'}, 401
         
