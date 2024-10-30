@@ -82,11 +82,9 @@ def create_notebook(author_id):
     return str(result.inserted_id)
 
 def save_notebook(notebook_id, notebook_json):
-    notebook_json = notebook_json.replace("'", '"')
-    from app import app
-    app.logger.info(str(notebook_json))
-    nb = nbformat.from_dict(json.loads(notebook_json))
-    result=find_metadata_cells(json.loads(notebook_json))
+    #notebook_json = notebook_json.replace("'", '"')
+    nb = nbformat.from_dict(notebook_json)
+    result=find_metadata_cells(notebook_json)
     if result=="error":
         return "error"
     update_fields = {
