@@ -4,7 +4,7 @@ from flask_restful import Api, Resource
 from config import Config
 from models import mongo, get_notebook, get_user_by_username, get_user_by_id, notebook_html
 from resources import (
-    UserRegister, UserLogin, UserResource,
+    UserRegister, UserResource,
     NotebookCreate, NotebookSave, NotebookQuery, NotebookDelete
 )
 from utils import decode_token
