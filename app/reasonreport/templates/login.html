@@ -2,7 +2,7 @@
 {% extends "base.html" %}
 {% block content %}
     <h2>Login</h2>
-    <form id="login-form" action="{{ url_for('login', next=request.path) }}">
+    <form id="login-form" action="{{ url_for('login', next=request.path) }}" method="POST">
         <label for="login-username">Username:</label>
         <input type="text" id="login-username" name="username" required>
         <br>
