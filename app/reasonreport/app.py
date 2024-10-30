@@ -111,12 +111,12 @@ def create():
 @app.route('/logout')
 def logout():
     session.clear()  # Clear Flask session cookies
-    response = make_response(redirect(url_for('home')))
+    response = make_response(redirect(url_for('index')))
     # Manually clear all other cookies
     for cookie in request.cookies:
         response.set_cookie(cookie, '', expires=0)   
     return response
-    
+
 
 @app.route('/slug/<slug>')
 def notebook(slug):
