@@ -4,31 +4,6 @@
 
 const API_BASE = '/api';
 
-// Function to get token from session storage
-function getToken() {
-    return sessionStorage.getItem('token' );
-}
-
-// Function to set token in session storage
-function setToken(token) {
-    sessionStorage.setItem('token', token);
-}
-
-// Function to set username in session storage
-function setUsername(username) {
-    sessionStorage.setItem('username', username);
-}
-
-// Function to get username
-function getUsername() {
-    return sessionStorage.getItem('username');
-}
-
-// Function to clear session
-function clearSession() {
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('username');
-}
 
 // Show login form
 function showLogin() {
@@ -40,11 +15,7 @@ function showRegister() {
     window.location.href = '/register';
 }
 
-// Logout function
-function logout() {
-    clearSession();
-    window.location.href = '/';
-}
+
 
 // Event listeners for login and register forms
 document.addEventListener('DOMContentLoaded', () => {

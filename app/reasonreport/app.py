@@ -108,7 +108,15 @@ def create():
     notebook_id = create_notebook(user_info['user_id'])
     return render_template('edit.html', notebook_id=notebook_id, **user_info)
 
-
+@app.route('/logout')
+def logout():
+    session.clear()  # Clear Flask session cookies
+    response = make_response(redirect(url_for('home')))
+    # Manually clear all other cookies
+    for cookie in request.cookies:
+        response.set_cookie(cookie, '', expires=0)   
+    return response
+    
 
 @app.route('/slug/<slug>')
 def notebook(slug):

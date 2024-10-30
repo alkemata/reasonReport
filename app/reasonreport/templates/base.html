@@ -25,7 +25,7 @@
             {% endif %}
                 {% if is_authenticated %}
                 <button id="create-button" style="display: inline;" onclick="window.location.href='{{ url_for('create') }}'">Create Notebook</button>
-                <button id="logout-button" style="display: inline;" onclick="logout()">Logout</button>
+                <button id="logout-button" style="display: inline;" onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>
                 {% else %}
                                 <!-- These buttons will be managed by JavaScript -->
                                 <button id="login-button" onclick="window.location.href='{{ url_for('login', next=request.path) }}'">Login</button>
@@ -38,13 +38,6 @@
         {% block content %}{% endblock %}
     </main>
 
-        <script>
-        // Function to handle logout
-        function logout() {
-            sessionStorage.removeItem('token'); // Remove token from sessionStorage
-            sessionStorage.removeItem('username'); // Remove username as well
-            window.location.href = '/'; // Redirect to home page
-        }
-    </script>
+
 </body>
 </html>
