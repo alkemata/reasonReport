@@ -94,36 +94,6 @@ function toggleEdit(notebookId) {
 
 // Event listeners for login and register forms
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-
-            try {
-                const response = await fetch(`${API_BASE}/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password }),
-                    credentials: 'include',
-                });
-
-                const data = await response.json();
-                if (response.status === 200) {
-                     setUsername(username);
-                    window.location.href = '/';
-                } else {
-                    document.getElementById('login-message').innerText = data.message;
-                }
-            } catch (err) {
-                console.error(err);
-                document.getElementById('login-message').innerText = 'An error occurred.';
-            }
-        });
-    }
 
     const registerForm = document.getElementById('register-form');
     if (registerForm) {

@@ -92,7 +92,7 @@ def login():
             max_age=3600,         # Expiration time in seconds (optional, can also use `expires`)
             path='/'              # Path for the cookie, default is root
     )
-            return redirect(next_page or url_for('home'))
+            return redirect(next_page)
         else:
             flash("Invalid credentials, please try again.")
     return render_template('login.html')
