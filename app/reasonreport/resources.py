@@ -91,15 +91,15 @@ class NotebookSave(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('notebook', required=True, help="Notebook JSON is required")
         args = parser.parse_args()
-        print(args['notebook'])
-        current_app.logger.info(args['notebook'])
+        nb=request.get_json()
+        print(nb)
         
         notebook = get_notebook(notebook_id) # for checking authour
         if not notebook:
             return {'message': 'Notebook not found'}, 404
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
-        result=save_notebook(notebook_id, args['notebook'])
+        result=save_notebook(notebook_id, nb)
         if result == 'ok':
             return {'message': 'OK'}, 200
         else:
