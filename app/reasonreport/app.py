@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response, flash
 from flask_restful import Api, Resource
 from config import Config
 from models import mongo, get_notebook, get_user_by_username, get_user_by_id, notebook_html
