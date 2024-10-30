@@ -155,8 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     const loginData = await loginResponse.json();
                     if (loginResponse.status === 200) {
-                        setToken(loginData.token);
-                        setUsername(username);
 
                         // Create notebook
                         const notebookResponse = await fetch(`${API_BASE}/notebooks`, {

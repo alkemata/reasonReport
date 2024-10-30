@@ -25,29 +25,15 @@ class UserRegister(Resource):
             return {'message': str(e)}, 400
 
 # User Login
-class UserLogin(Resource):
-    def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('username', required=True, help="Username cannot be blank!")
-        parser.add_argument('password', required=True, help="Password cannot be blank!")
-        args = parser.parse_args()
+def authenticate_user(username, password):
         
-        user = get_user_by_username(args['username'])
-        if not user or not check_password_hash(user['password'], args['password']):
-            return {'message': 'Invalid credentials'}, 401
-        
-        # Generate a response and set the token cookie
-        response = response = make_response({'message': 'Login successful'},200)
+        user = get_user_by_username(username)
+        if not user or not check_password_hash(user['password'], password):
+            return None
+
         token = generate_token(str(user['_id']))
-        response.set_cookie(
-        key='jwt_token',
-        value=token,
-        httponly=True,        # Prevent JavaScript access for security
-        secure=True,          # Ensure it's only sent over HTTPS (set to False for local development if needed)
-        samesite='Strict',    # Help prevent CSRF attacks
-        max_age=3600,         # Expiration time in seconds (optional, can also use `expires`)
-        path='/'              # Path for the cookie, default is root
-    )
+        return token
+
        # header=set_token_cookie(response,str(user['_id']))
         return response
         

@@ -75,8 +75,27 @@ def index():
             return render_template('error.html',error="Notebook not found",is_author=is_author,**user_info)
     return render_template('error.html',error="No personnal page",is_author=is_author,**user_info)
 
-@app.route('/login')
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'POST':
+        # Authenticate the user here
+        if authenticate_user(request.form['username'], request.form['password']):
+            # Login successful, redirect to the original page
+            next_page = request.args.get('next')
+            
+            response.set_cookie(
+            key='jwt_token',
+            value=token,
+            httponly=True,        # Prevent JavaScript access for security
+            secure=True,          # Ensure it's only sent over HTTPS (set to False for local development if needed)
+            samesite='Strict',    # Help prevent CSRF attacks
+            max_age=3600,         # Expiration time in seconds (optional, can also use `expires`)
+            path='/'              # Path for the cookie, default is root
+    )
+            return redirect(next_page or url_for('home'))
+        else:
+            flash("Invalid credentials, please try again.")
     return render_template('login.html')
 
 @app.route('/register')

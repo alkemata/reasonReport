@@ -28,7 +28,7 @@
                 <button id="logout-button" style="display: inline;" onclick="logout()">Logout</button>
                 {% else %}
                                 <!-- These buttons will be managed by JavaScript -->
-                                <button id="login-button" onclick="showLogin()">Login</button>
+                                <button id="login-button" onclick="window.location.href='{{ url_for('login', next=request.path) }}'">Login</button>
                                 <button id="register-button" onclick="showRegister()">Register</button>
                 {% endif %}
             </div>
