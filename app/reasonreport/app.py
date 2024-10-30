@@ -27,7 +27,6 @@ app.logger.setLevel(logging.DEBUG)
 
 # API Routes
 api.add_resource(UserRegister, '/api/register')
-api.add_resource(UserLogin, '/api/login')
 api.add_resource(UserResource, '/api/users/<string:user_id>')
 api.add_resource(NotebookCreate, '/api/notebooks')
 api.add_resource(NotebookSave, '/api/notebooks/save/<string:notebook_id>')
@@ -83,7 +82,7 @@ def login():
         if authenticate_user(request.form['username'], request.form['password']):
             # Login successful, redirect to the original page
             next_page = request.args.get('next')
-            
+
             response.set_cookie(
             key='jwt_token',
             value=token,
