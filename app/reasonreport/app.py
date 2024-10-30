@@ -82,7 +82,7 @@ def login():
         if authenticate_user(request.form['username'], request.form['password']):
             # Login successful, redirect to the original page
             next_page = request.args.get('next')
-
+            response=redirect(next_page)
             response.set_cookie(
             key='jwt_token',
             value=token,
@@ -92,7 +92,7 @@ def login():
             max_age=3600,         # Expiration time in seconds (optional, can also use `expires`)
             path='/'              # Path for the cookie, default is root
     )
-            return redirect(next_page)
+            return response
         else:
             flash("Invalid credentials, please try again.")
     return render_template('login.html')
