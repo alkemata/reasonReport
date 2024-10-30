@@ -106,7 +106,7 @@ def register():
 def create():
     user_info = get_user_info_from_token()
     notebook_id = create_notebook(user_info['user_id'])
-    return render_template('edit.html', notebook_id=identifier, **user_info)
+    return render_template('edit.html', notebook_id=notebook_id, **user_info)
 
 
 
