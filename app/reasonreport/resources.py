@@ -34,8 +34,6 @@ def authenticate_user(username, password):
         token = generate_token(str(user['_id']))
         return token
 
-       # header=set_token_cookie(response,str(user['_id']))
-        return response
         
 
 # User CRUD Operations

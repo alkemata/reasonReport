@@ -48,17 +48,4 @@ def token_required(f):
     
     return decorated
 
-def set_token_cookie(response, user_id):
-    """
-    Helper function to set the JWT token in an HTTP-only cookie.
-    """
-    token = generate_token(user_id)
-    header={'Set-cookie':'jwt_token='+token+';httponly;secure;SameSite=Strict'}
-    return header
 
-def clear_token_cookie(response):
-    """
-    Helper function to clear the JWT token cookie.
-    """
-    response.delete_cookie('jwt_token')
-    return response
