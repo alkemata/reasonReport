@@ -79,7 +79,8 @@ def index():
 def login():
     if request.method == 'POST':
         # Authenticate the user here
-        if authenticate_user(request.form['username'], request.form['password']):
+        token=authenticate_user(request.form['username'], request.form['password'])
+        if token:
             # Login successful, redirect to the original page
             next_page = request.args.get('next')
             response=redirect(next_page)
