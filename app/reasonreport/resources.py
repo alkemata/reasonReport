@@ -91,7 +91,7 @@ class NotebookSave(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('notebook', required=True, help="Notebook JSON is required")
         args = parser.parse_args()
-        nb=jsonify(request.get_json())
+        nb=request.get_json()
         print(nb)
         current_app.logger.info(nb)
         
