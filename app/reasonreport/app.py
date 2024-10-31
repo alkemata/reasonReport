@@ -103,9 +103,9 @@ def register():
     if request.method == 'POST':
         user_id=create_user(request.form['username'],request.form['password'])
         if user_id:
-            redirect('/')
+            return redirect('/')
         else:
-            render_template('error.html',error="user already exists")
+            return render_template('error.html',error="user already exists")
     else:
         return render_template('register.html')
 
