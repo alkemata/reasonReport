@@ -92,7 +92,7 @@ class NotebookSave(Resource):
         parser.add_argument('notebook', required=True, help="Notebook JSON is required")
         args = parser.parse_args()
         nb=request.get_json()
-        print(nb)
+        #print(nb)
         current_app.logger.info(nb)
         
         notebook = get_notebook(notebook_id) # for checking authour
