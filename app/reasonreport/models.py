@@ -83,7 +83,6 @@ def create_notebook(author_id):
 
 def save_notebook(notebook_id, notebook_json):
     #notebook_json = notebook_json.replace("'", '"')
-    print(notebook_json)
     nb = nbformat.from_dict(json.loads(notebook_json))
     result=find_metadata_cells(nb)
     if result=="error":
