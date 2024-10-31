@@ -69,7 +69,7 @@ def index():
         if notebook:
             notebook['_id'] = str(notebook['_id'])
             is_author = True
-            return render_template('index.html', notebook=notebook_html(notebook), is_author=is_author, **user_info)
+            return render_template('index.html', notebook=notebook_html(notebook), id=notebook['_id'],is_author=is_author, **user_info)
         else:
             return render_template('error.html',error="Notebook not found",is_author=is_author,**user_info)
     return render_template('error.html',error="No personnal page",is_author=is_author,**user_info)
@@ -140,7 +140,7 @@ def notebook(slug):
         author = get_user_by_id(notebook['author'])
         notebook['author_username'] = author['username'] if author else 'Unknown'
 
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, **user_info)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']),id=notebook['_id'], is_author=is_author, **user_info)
     else:
         return render_template('notebook.html', notebook=None, is_author=False, **user_info)
 
@@ -159,7 +159,7 @@ def notebookid(id):
         author = get_user_by_id(notebook['author'])
         notebook['author_username'] = author['username'] if author else 'Unknown'
 
-        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), is_author=is_author, **user_info)
+        return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), id=notebook['_id'],is_author=is_author, **user_info)
     else:
         return render_template('notebook.html', notebook=None, is_author=False, **user_info)
 
