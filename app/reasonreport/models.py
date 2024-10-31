@@ -13,7 +13,7 @@ mongo = PyMongo()
 # User Operations
 def create_user(username, password, landing_page=None, additional_fields=None):
     if mongo.db.users.find_one({'username': username}):
-        raise ValueError("Username already exists.")
+        return None
     
     user = {
         'username': username,

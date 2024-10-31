@@ -98,9 +98,16 @@ def login():
             flash("Invalid credentials, please try again.")
     return render_template('login.html')
 
-@app.route('/register')
+@app.route('/register', methods=['GET', 'POST'])
 def register():
-    return render_template('register.html')
+    if request.method == 'POST':
+        user_id=create_user(request.form['username'],request.form['password'])
+        if user_id:
+            redirect('/')
+        else:
+            render_template('error.html',error="user already exists")
+    else:
+        return render_template('register.html')
 
 @app.route('/create')
 def create():
