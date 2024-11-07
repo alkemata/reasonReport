@@ -8,10 +8,10 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./mongod.conf:/etc/mongod.conf
+      - ./mongo-config:/etc/mongo-config
       - ./mongo-data:/data/db
       - ./mongo-logs:/var/log/mongodb
-    command: mongod --config /etc/mongod.conf
+    command: mongod --config /etc/mongo-config/smongodb.conf
     networks:
       - default
     
