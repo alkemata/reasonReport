@@ -11,7 +11,7 @@ services:
       - ./mongo-config:/etc/mongo-config
       - ./mongo-data:/data/db
       - ./mongo-logs:/var/log/mongodb
-    command: mongod --config /etc/mongo-config/smongodb.conf
+    command: mongod --config /etc/mongo-config/mongodb.conf
     networks:
       - default
     
