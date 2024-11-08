@@ -11,14 +11,20 @@ import json
 mongo = PyMongo()
 
 # User Operations
-def create_user(username, password, landing_page=None, additional_fields=None):
+def create_user(username, password, landing_page=None, role="normal", additional_fields=None):
+    """Create a new user with a role."""
     if mongo.db.users.find_one({'username': username}):
         return None
-    
+
+    # Add validation to ensure the role is valid
+    if role not in ["admin", "normal", "editor", "advanced"]:
+        raise ValueError("Invalid role. Must be one of: admin, normal, editor, advanced")
+
     user = {
         'username': username,
         'password': generate_password_hash(password),
-        'landing_page': landing_page or None
+        'landing_page': landing_page or None,
+        'role': role  # Add role to the user document
     }
     
     if additional_fields:
@@ -84,8 +90,7 @@ def create_notebook(author_id):
 def save_notebook(notebook_id, notebook_json):
     #notebook_json = notebook_json.replace("'", '"')
     nb = nbformat.from_dict(notebook_json['notebook'])
-    print (nbformat.validate(nb,version=4))
-    #print(nb)
+
     result=find_metadata_cells(nb)
     if result=="error":
         return "error"
@@ -119,6 +124,25 @@ def notebook_html(notebook):
     html_exporter = HTMLExporter(template_name="classic")
     (body, resources) = html_exporter.from_notebook_node(notebook_content)
     return body
+
+
+def ensure_unique_slug(initial_slug):
+    """
+    Ensure the generated slug is unique in the database by appending a number if necessary.
+
+    :param initial_slug: The initial slug generated from the title.
+    :return: A unique slug that doesn't already exist in the MongoDB collection.
+    """
+    slug = initial_slug
+    counter = 1
+    
+    # Keep checking if the slug exists in the database
+    while mongo.db.notebooks.find_one({'slug': slug}):
+        # If it exists, append or increment the counter to make it unique
+        slug = f"{initial_slug}-{counter}"
+        counter += 1
+    
+    return slug
 
 
 def find_cells_by_metadata(notebook_json, key, value):
@@ -170,6 +194,7 @@ def find_metadata_cells(notebook_data):
 
     # Generate slug from title
     slug = slugify(metadata_values['title'])
+    slug = ensure_unique_slug(slug)
 
     # Create and return the resulting structure
     result = {

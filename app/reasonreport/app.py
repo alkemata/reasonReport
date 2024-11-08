@@ -11,11 +11,14 @@ from utils import decode_token
 from bson.objectid import ObjectId
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
 app.debug = True
+limiter = Limiter(get_remote_address, app=app)
 
 # Initialize PyMongo
 mongo.init_app(app)
@@ -99,8 +102,11 @@ def login():
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit("5 per minute")
 def register():
     if request.method == 'POST':
+        if request.form.get('username_hp'):
+            return jsonify({'error': 'Bot detected'}), 400
         user_id=create_user(request.form['username'],request.form['password'])
         if user_id:
             return redirect('/')

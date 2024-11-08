@@ -5,6 +5,7 @@ Flask-JWT-Extended
 flask-bcrypt
 Flask-Login
 flask-restful
+Flask-Limiter
 nbconvert
 nbformat
 python-slugify
