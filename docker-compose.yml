@@ -9,8 +9,8 @@ services:
       - "27017:27017"
     volumes:
       - ./mongo-config:/etc/mongo-config
-      - ./mongo-data:/data/db
-      - ./mongo-logs:/var/log/mongodb
+      - ./mongo-data:/data/db:rw
+      - ./mongo-logs:/var/log/mongodb:rw
     command: mongod --config /etc/mongo-config/mongod.conf
     networks:
       - default
