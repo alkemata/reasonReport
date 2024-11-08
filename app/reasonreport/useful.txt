@@ -6,3 +6,6 @@ db.users.find()
 
 create shared network
 docker network create shared_network
+
+
+chmod -R 777 mongo-logs ? why, I don't know...
