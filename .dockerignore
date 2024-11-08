@@ -1,0 +1,3 @@
+./mongodb-data
+./mongo-logs
+./mongod.conf
