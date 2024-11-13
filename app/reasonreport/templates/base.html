@@ -5,7 +5,37 @@
     <meta charset="UTF-8">
     <title>{{ title if title else "Flask App" }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* Basic styling for the dropdown menu */
+        .dropdown {
+            display: inline-block;
+            position: relative;
+        }
 
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -19,17 +49,26 @@
                 {% endif %}
                 {% if is_author %}
                 <button id="edit-button" onclick="window.location.href='/edit/{{ id }}'">Edit Notebook</button>
-            {% else %}
-                <!-- Hide the button -->
+                {% else %}
                 <button id="edit-button" style="display: none;">Edit Notebook</button>
-            {% endif %}
+                {% endif %}
+                
                 {% if is_authenticated %}
-                <button id="create-button" style="display: inline;" onclick="window.location.href='{{ url_for('create') }}'">Create Notebook</button>
+                <!-- Create button with dropdown -->
+                <div class="dropdown">
+                    <button id="create-button" style="display: inline;">Create Notebook</button>
+                    <div class="dropdown-content">
+                        <a href="{{ url_for('create', slugid='blank') }}">Blank</a>
+                        <a href="{{ url_for('create', slugid='article') }}">Article</a>
+                        <a href="{{ url_for('create', slugid='group') }}">Group</a>
+                        <!-- Add more options as needed -->
+                    </div>
+                </div>
+
                 <button id="logout-button" style="display: inline;" onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>
                 {% else %}
-                                <!-- These buttons will be managed by JavaScript -->
-                                <button id="login-button" onclick="window.location.href='{{ url_for('login', next=request.path) }}'">Login</button>
-                                <button id="register-button" onclick="window.location.href='{{ url_for('register') }}'">Register</button>
+                <button id="login-button" onclick="window.location.href='{{ url_for('login', next=request.path) }}'">Login</button>
+                <button id="register-button" onclick="window.location.href='{{ url_for('register') }}'">Register</button>
                 {% endif %}
             </div>
         </nav>
@@ -37,7 +76,5 @@
     <main>
         {% block content %}{% endblock %}
     </main>
-
-
 </body>
 </html>

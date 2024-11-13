@@ -105,13 +105,26 @@ def login():
 @limiter.limit("5 per minute")
 def register():
     if request.method == 'POST':
-        if request.form.get('username_hp'):
-            return jsonify({'error': 'Bot detected'}), 400
-        user_id=create_user(request.form['username'],request.form['password'])
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Check if user already exists
+        if get_user_by_username(username):
+            # User exists, render the registration form with an error message
+            error_message = "Username already exists. Please choose a different username."
+            return render_template('register.html', error_message=error_message)
+        
+        # Create user and associated notebook
+        user_id = create_user(username, password)
         if user_id:
-            return redirect('/')
+            # Create a new notebook with the title and slug as the username
+            notebook_id = create_notebook(user_id)
+            notebook = get_notebook(notebook_id)
+            if notebook:
+                notebook['_id'] = str(notebook['_id'])
+                return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), id=notebook['_id'], is_author=True, username=username, is_authenticated=True)
         else:
-            return render_template('error.html',error="user already exists")
+            return render_template('error.html', error="Failed to create user.")
     else:
         return render_template('register.html')
 

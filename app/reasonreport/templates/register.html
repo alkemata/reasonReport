@@ -8,10 +8,14 @@
         <br>
         <label for="register-password">Password:</label>
         <input type="password" id="register-password" name="password" required>
-        <input type="text" name="username_hp" style="display:none">
-
         <br>
         <button type="submit">Register</button>
     </form>
+    
+    {% if error_message %}
+        <div class="error-message">{{ error_message }}</div>
+    {% endif %}
+    
     <div id="register-message"></div>
 {% endblock %}
+

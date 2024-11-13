@@ -11,20 +11,14 @@ import json
 mongo = PyMongo()
 
 # User Operations
-def create_user(username, password, landing_page=None, role="normal", additional_fields=None):
-    """Create a new user with a role."""
+def create_user(username, password, landing_page=None, additional_fields=None):
     if mongo.db.users.find_one({'username': username}):
         return None
-
-    # Add validation to ensure the role is valid
-    if role not in ["admin", "normal", "editor", "advanced"]:
-        raise ValueError("Invalid role. Must be one of: admin, normal, editor, advanced")
-
+    
     user = {
         'username': username,
         'password': generate_password_hash(password),
-        'landing_page': landing_page or None,
-        'role': role  # Add role to the user document
+        'landing_page': landing_page or None
     }
     
     if additional_fields:
