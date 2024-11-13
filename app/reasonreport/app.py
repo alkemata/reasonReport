@@ -134,6 +134,16 @@ def create():
     notebook_id = create_notebook(user_info['user_id'])
     return render_template('edit.html', notebook_id=notebook_id, **user_info)
 
+@app.route('/create_fromtemplate/<slugid>')
+def create_fromtemplate(slugid):
+    user_info = get_user_info_from_token()
+    notebook = get_notebook(slugid)
+    if 'message' in notebook and notebook['message'] == 'not_authorized':
+        flash('You are not authorized to access this notebook.')
+        return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
+    return render_template('edit.html', notebook_id=notebook_id, **user_info)
+
+
 @app.route('/logout')
 def logout():
     session.clear()  # Clear Flask session cookies
@@ -150,6 +160,9 @@ def notebook(slug):
     notebook = get_notebook(slug)
 
     is_author = False
+    if 'message' in notebook and notebook['message'] == 'not_authorized':
+        flash('You are not authorized to access this notebook.')
+        return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
     if notebook:
         notebook['_id'] = str(notebook['_id'])
         if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
@@ -169,6 +182,9 @@ def notebookid(id):
     notebook = get_notebook(id)
 
     is_author = False
+    if 'message' in notebook and notebook['message'] == 'not_authorized':
+        flash('You are not authorized to access this notebook.')
+        return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
     if notebook:
         notebook['_id'] = str(notebook['_id'])
         if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):

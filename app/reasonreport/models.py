@@ -93,7 +93,8 @@ def save_notebook(notebook_id, notebook_json):
         'author': result['author'],
         'slug':result['slug'],
         'title':result['title'],
-        'date':result['date']
+        'date':result['date'],
+        'is_public': False  # Adding a flag to check if notebook is public
     }
     
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
@@ -103,12 +104,23 @@ def save_notebook(notebook_id, notebook_json):
     #mongo.db.notebooks.create_index([('author', 1)])
     return 'ok'
 
-def get_notebook(query):
+def get_notebook(query, user_id):
     if isinstance(query, str) and ObjectId.is_valid(query):
         notebook = mongo.db.notebooks.find_one({'_id': ObjectId(query)})
     else:
         notebook = mongo.db.notebooks.find_one({'slug': query})
-    return notebook
+    
+    if notebook and check_authorization(notebook, user_id):
+        return notebook
+    else:
+        return {'message': 'not_authorized'}
+
+def check_authorization(notebook, user_id):
+    """
+    Check if a user is authorized to access a notebook.
+    The user must either be the author or the notebook must be public.
+    """
+    return notebook['author'] == str(user_id) or notebook.get('is_public', True) #TODO Check
 
 def delete_notebook(notebook_id):
     mongo.db.notebooks.delete_one({'_id': ObjectId(notebook_id)})

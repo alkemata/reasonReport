@@ -58,9 +58,9 @@
                 <div class="dropdown">
                     <button id="create-button" style="display: inline;">Create Notebook</button>
                     <div class="dropdown-content">
-                        <a href="{{ url_for('create', slugid='blank') }}">Blank</a>
-                        <a href="{{ url_for('create', slugid='article') }}">Article</a>
-                        <a href="{{ url_for('create', slugid='group') }}">Group</a>
+                        <a href="{{ url_for('create_fromtemplate', slugid='blank') }}">Blank</a>
+                        <a href="{{ url_for('create_fromtemplate', slugid='article') }}">Article</a>
+                        <a href="{{ url_for('create_fromtemplate', slugid='group') }}">Group</a>
                         <!-- Add more options as needed -->
                     </div>
                 </div>
