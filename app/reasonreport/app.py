@@ -157,7 +157,8 @@ def logout():
 @app.route('/slug/<slug>')
 def notebook(slug):
     user_info = get_user_info_from_token()
-    notebook = get_notebook(slug)
+    user_id=user_info['user_id']
+    notebook = get_notebook(slug,user_id)
 
     is_author = False
     if 'message' in notebook and notebook['message'] == 'not_authorized':
