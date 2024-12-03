@@ -119,7 +119,7 @@ def register():
         if user_id:
             # Create a new notebook with the title and slug as the username
             notebook_id = create_notebook(user_id)
-            notebook = get_notebook(notebook_id)
+            notebook = get_notebook(notebook_id,user_id)
             if notebook:
                 notebook['_id'] = str(notebook['_id'])
                 return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), id=notebook['_id'], is_author=True, username=username, is_authenticated=True)
