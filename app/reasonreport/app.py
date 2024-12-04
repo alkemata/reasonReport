@@ -139,6 +139,7 @@ def create():
 def create_fromtemplate(slugid):
     user_info = get_user_info_from_token()
     user_id=user_info['user_id']
+    notebook={}
     if slugid=="blank":
         noteboook=create_blank_notebook()
     else:
