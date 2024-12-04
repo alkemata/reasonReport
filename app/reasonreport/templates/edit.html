@@ -32,10 +32,10 @@
                                 console.log("Message contains 'error'. Doing nothing.");
                                  }
 
-                                if (event.data === "ok") {
-                                    // Redirect to "/id" if the message contains "ok"
-                                    window.location.href = "/id/{{notebook_id}}";
-                                }
+                                event_id=event.data
+                                // Redirect to "/id" if the message contains "ok"
+                                window.location.href = "/id/{{event_id}}";
+                                
                                         });
                     }
                 });

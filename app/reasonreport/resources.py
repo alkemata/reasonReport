@@ -3,7 +3,7 @@ from flask_restful import Resource, reqparse
 from flask import request, jsonify,  make_response, current_app
 from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
-    create_notebook, save_notebook, get_notebook, delete_notebook
+    create_notebook, create_new_notebbok,save_notebook, get_notebook, delete_notebook
 )
 from utils import token_required,generate_token
 from werkzeug.security import check_password_hash
@@ -78,12 +78,13 @@ class UserResource(Resource):
         return {'message': 'User deleted successfully'}, 200
 
 # Notebook Operations
-class NotebookCreate(Resource):
+class NotebookCreate(Resource): #todo add logic to validate the notebook
     @token_required
     def post(self):
         author_id = request.user['id']
-        notebook_id = create_notebook(author_id)
-        return {'message': 'Notebook created', 'notebook_id': notebook_id}, 201
+        nb=request.get_json()
+        id=create_new_notebbok(nb)
+        return {'message': 'Notebook created', 'notebook_id': id}, 201
 
 class NotebookSave(Resource):
     @token_required

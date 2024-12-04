@@ -81,6 +81,10 @@ def create_notebook(author_id):
     result = mongo.db.notebooks.insert_one(notebook)
     return str(result.inserted_id)
 
+def create_new_notebook(notebook_json):
+    result = mongo.db.notebooks.insert_one(notebook_json)
+    return str(result.inserted_id)
+
 def save_notebook(notebook_id, notebook_json):
     #notebook_json = notebook_json.replace("'", '"')
     nb = nbformat.from_dict(notebook_json['notebook'])

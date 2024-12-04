@@ -32,7 +32,7 @@ app.logger.setLevel(logging.DEBUG)
 # API Routes
 api.add_resource(UserRegister, '/api/register')
 api.add_resource(UserResource, '/api/users/<string:user_id>')
-api.add_resource(NotebookCreate, '/api/notebooks')
+api.add_resource(NotebookCreate, '/api/notebooks/create')
 api.add_resource(NotebookSave, '/api/notebooks/save/<string:notebook_id>')
 api.add_resource(NotebookQuery, '/api/notebooks/query/<string:notebook_id>')
 api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
@@ -141,9 +141,10 @@ def create_fromtemplate(slugid):
     user_id=user_info['user_id']
     notebook={}
     if slugid=="blank":
-        noteboook=create_blank_notebook()
+        notebook_id='-1'
     else:
         notebook = get_notebook(slugid,user_id)
+        notebook_id=str(notebook['_id'])
     if 'message' in notebook and notebook['message'] == 'not_authorized':
         flash('You are not authorized to access this notebook.')
         return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
