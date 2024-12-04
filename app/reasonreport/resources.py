@@ -113,12 +113,12 @@ class NotebookQuery(Resource):
                 
         if not notebook_id and not slug:
             return {'message': 'Provide either id or slug as query parameter'}, 400
-        
+        user_id=request.user['id']:
         query = notebook_id if notebook_id else slug
-        if query==-1:
+        if query=='-1':
             notebook=create_new_notebook()
         else:
-            notebook = get_notebook(query)
+            notebook = get_notebook(query,user_id)
         
         if not notebook:
             return {'message': 'Notebook not found'}, 404
