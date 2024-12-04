@@ -110,10 +110,13 @@ def get_notebook(query, user_id):
     else:
         notebook = mongo.db.notebooks.find_one({'slug': query})
     
-    if notebook and check_authorization(notebook, user_id):
-        return notebook
+    if notebook:
+        if check_authorization(notebook, user_id):
+            return notebook
+        else:
+            return {'message': 'not_authorized'}
     else:
-        return {'message': 'not_authorized'}
+        return {'message':'not found'}
 
 def check_authorization(notebook, user_id):
     """

@@ -160,11 +160,11 @@ def notebook(slug):
     user_id=user_info['user_id']
     notebook = get_notebook(slug,user_id)    
     is_author = False
-  
+    print(user_id)
     if notebook:
-        if 'message' in notebook and notebook['message'] == 'not_authorized':
+        if 'message' in notebook:
             flash('You are not authorized to access this notebook.')
-            return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
+            return render_template('error.html', error=notebook['message'], is_author=False, **user_info)
         notebook['_id'] = str(notebook['_id'])
         if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
             is_author = True
