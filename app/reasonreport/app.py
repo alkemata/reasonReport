@@ -13,6 +13,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from notebooks import create_blank_notebook
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -137,7 +138,11 @@ def create():
 @app.route('/create_fromtemplate/<slugid>')
 def create_fromtemplate(slugid):
     user_info = get_user_info_from_token()
-    notebook = get_notebook(slugid)
+    user_id=user_info['user_id']
+    if slugid=="blank":
+        noteboook=create_blank_notebook()
+    else:
+        notebook = get_notebook(slugid,user_id)
     if 'message' in notebook and notebook['message'] == 'not_authorized':
         flash('You are not authorized to access this notebook.')
         return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)

@@ -1,5 +1,9 @@
 import nbformat as nbf
 
+def create_blank_notebook():
+    nb = nbf.v4.new_notebook()
+    return nb
+
 def create_notebook_with_labels(cell_labels):
     # Create a new notebook
     nb = nbf.v4.new_notebook()
