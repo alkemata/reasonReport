@@ -3,7 +3,7 @@ from flask_restful import Resource, reqparse
 from flask import request, jsonify,  make_response, current_app
 from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
-    create_notebook, create_new_notebbok,save_notebook, get_notebook, delete_notebook
+    create_notebook, create_new_notebook,save_notebook, get_notebook, delete_notebook
 )
 from utils import token_required,generate_token
 from werkzeug.security import check_password_hash
