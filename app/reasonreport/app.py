@@ -74,8 +74,8 @@ def index():
             is_author = True
             return render_template('index.html', notebook=notebook_html(notebook), id=notebook['_id'],is_author=is_author, **user_info)
         else:
-            return render_template('error.html',error="Notebook not found",is_author=is_author,**user_info)
-    return render_template('error.html',error="No personnal page",is_author=is_author,**user_info)
+            return render_template('error.html',error="No personal page",is_author=is_author,**user_info)
+    return render_template('error.html',error="Not authenticated",is_author=is_author,**user_info)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -159,7 +159,7 @@ def notebook(slug):
     user_info = get_user_info_from_token()
     user_id=user_info['user_id']
     notebook = get_notebook(slug,user_id)
-
+    print(notebook)
     is_author = False
     if 'message' in notebook and notebook['message'] == 'not_authorized':
         flash('You are not authorized to access this notebook.')
