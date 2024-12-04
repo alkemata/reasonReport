@@ -158,13 +158,13 @@ def logout():
 def notebook(slug):
     user_info = get_user_info_from_token()
     user_id=user_info['user_id']
-    notebook = get_notebook(slug,user_id)
-    print(notebook)
+    notebook = get_notebook(slug,user_id)    
     is_author = False
-    if 'message' in notebook and notebook['message'] == 'not_authorized':
-        flash('You are not authorized to access this notebook.')
-        return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
+  
     if notebook:
+        if 'message' in notebook and notebook['message'] == 'not_authorized':
+            flash('You are not authorized to access this notebook.')
+            return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
         notebook['_id'] = str(notebook['_id'])
         if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
             is_author = True
@@ -175,7 +175,7 @@ def notebook(slug):
 
         return render_template('notebook.html', notebook=notebook_html(notebook['notebook']),id=notebook['_id'], is_author=is_author, **user_info)
     else:
-        return render_template('notebook.html', notebook=None, is_author=False, **user_info)
+        return render_template('error.html', error='Not found', is_author=False, **user_info)
 
 @app.route('/id/<id>')
 def notebookid(id):
