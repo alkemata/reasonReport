@@ -5,6 +5,7 @@ from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
     create_notebook, create_new_notebook,save_notebook, get_notebook, delete_notebook
 )
+from notebooks import create_blank_notebook
 from utils import token_required,generate_token
 from werkzeug.security import check_password_hash
 import json
@@ -116,7 +117,7 @@ class NotebookQuery(Resource):
         user_id=request.user['id']
         query = notebook_id if notebook_id else slug
         if query=='-1':
-            notebook=create_new_notebook()
+            notebook=create_blank_notebook()
         else:
             notebook = get_notebook(query,user_id)
         
