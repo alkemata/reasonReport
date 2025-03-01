@@ -191,7 +191,8 @@ def notebook(slug):
 @app.route('/id/<id>')
 def notebookid(id):
     user_info = get_user_info_from_token()
-    notebook = get_notebook(id)
+    user_id=user_info['user_id']
+    notebook = get_notebook(id,user_id)
 
     is_author = False
     if 'message' in notebook and notebook['message'] == 'not_authorized':
