@@ -37,6 +37,10 @@ api.add_resource(NotebookSave, '/api/notebooks/save/<string:notebook_id>')
 api.add_resource(NotebookQuery, '/api/notebooks/query/<string:notebook_id>')
 api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
 
+# creation of logging file
+logging.basicConfig(filename='user_actions.log', level=logging.INFO, format='%(asctime)s - %(message)s')
+
+
 # Function to handle token retrieval and user info extraction
 def get_user_info_from_token():
     token = request.cookies.get('jwt_token1')
@@ -82,21 +86,20 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Authenticate the user here
-        token=authenticate_user(request.form['username'], request.form['password'])
+        token = authenticate_user(request.form['username'], request.form['password'])
         if token:
-            # Login successful, redirect to the original page
             next_page = request.args.get('next')
-            response=redirect(next_page)
+            response = redirect(next_page)
             response.set_cookie(
-            key='jwt_token1',
-            value=token,
-            httponly=True,        # Prevent JavaScript access for security
-            secure=True,          # Ensure it's only sent over HTTPS (set to False for local development if needed)
-            samesite='Strict',    # Help prevent CSRF attacks
-            max_age=3600,         # Expiration time in seconds (optional, can also use `expires`)
-            path='/'              # Path for the cookie, default is root
-    )
+                key='jwt_token1',
+                value=token,
+                httponly=True,
+                secure=True,
+                samesite='Strict',
+                max_age=3600,
+                path='/'
+            )
+            logging.info(f"User {request.form['username']} logged in")
             return response
         else:
             flash("Invalid credentials, please try again.")
@@ -153,13 +156,14 @@ def create_fromtemplate(slugid):
 
 @app.route('/logout')
 def logout():
-    session.clear()  # Clear Flask session cookies
+    user_info = get_user_info_from_token()
+    if user_info['is_authenticated']:
+        logging.info(f"User {user_info['username']} logged out")
+    session.clear()
     response = make_response(redirect(url_for('index')))
-    # Manually clear all other cookies
     for cookie in request.cookies:
-        response.set_cookie(cookie, '', expires=0)   
+        response.set_cookie(cookie, '', expires=0)
     return response
-
 
 @app.route('/slug/<slug>')
 def notebook(slug):

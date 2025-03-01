@@ -17,11 +17,14 @@ class UserRegister(Resource):
         parser.add_argument('username', required=True, help="Username cannot be blank!")
         parser.add_argument('password', required=True, help="Password cannot be blank!")
         args = parser.parse_args()
-        
+
         try:
             user_id = create_user(args['username'], args['password'])
-            print('User created succesfully')
-            return {'message': 'User created successfully', 'user_id': user_id}, 201
+            if user_id:
+                logging.info(f"User {args['username']} created successfully")
+                return {'message': 'User created successfully', 'user_id': user_id}, 201
+            else:
+                return {'message': 'Username already exists'}, 400
         except ValueError as e:
             return {'message': str(e)}, 400
 
