@@ -227,6 +227,26 @@ def serve_jupyterlite_files(filename):
 def jupyterlite():
     return send_from_directory(JUPYTERLITE_PATH, 'index.html')
 
+#display content of mongodb database
+@app.route('/database')
+def database_info():
+    """
+    Displays a list of MongoDB collections (tables) and the IDs of documents in each collection.
+    """
+    try:
+        collections = mongo.db.list_collection_names()
+        database_data = {}
+
+        for collection in collections:
+            documents = mongo.db[collection].find({}, {"_id": 1})  # Fetch only IDs
+            document_ids = [str(doc["_id"]) for doc in documents]  # Convert ObjectId to string
+            database_data[collection] = document_ids
+
+        return jsonify(database_data)
+    
+    except Exception as e:
+        return jsonify({"error": str(e)})
+
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True)
