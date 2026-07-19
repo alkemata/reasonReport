@@ -1,0 +1,29 @@
+**/_output
+**/lib
+**/node_modules
+**/static
+
+.ipynb_checkpoints/
+.yarn-packages
+.yarn
+.pnp*
+build
+docs/_build
+node_modules
+.pytest_cache
+app/extensions/
+.cache/
+
+# JS templating
+bootstrap.js
+index.template.js
+
+# generated
+app/**/*.html
+app/service-worker-*.js
+
+# The changelog is updated by the releaser
+CHANGELOG.md
+
+# UI tests
+ui-tests/ui-tests-app

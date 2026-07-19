@@ -1,0 +1,13 @@
+# minimum needed to build jupyterlite... in addition to nodejs
+# see .binder/ and docs/ for full development/docs environments
+doit >=0.34,<1
+hatch >=1.6.3,<2
+twine
+requests_cache
+# bootstrap packages
+pkginfo
+jupyter_core >=4.7
+jupyterlab >=4.2.4,<4.3
+# TODO: remove pin once working with twine
+# https://github.com/pypa/twine/pull/1126
+importlib_metadata
