@@ -4,10 +4,10 @@ from flask_restful import Api, Resource
 from config import Config
 from models import mongo, get_notebook, get_user_by_username, get_user_by_id, notebook_html, create_notebook, create_user
 from resources import (
-    UserRegister, UserResource,
+    CurrentUser, UserLogin, UserLogout, UserRegister, UserResource,
     NotebookCreate, NotebookSave, NotebookQuery, NotebookDelete, authenticate_user
 )
-from utils import decode_token
+from utils import clear_auth_cookie, decode_token, generate_token, set_auth_cookie
 from bson.objectid import ObjectId
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
@@ -18,7 +18,7 @@ from notebooks import create_blank_notebook
 app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
-app.debug = True
+app.debug = Config.DEBUG
 limiter = Limiter(get_remote_address, app=app)
 
 # Initialize PyMongo
@@ -26,11 +26,21 @@ mongo.init_app(app)
 
 # Initialize Flask-RESTful API
 api = Api(app)
-toolbar = DebugToolbarExtension(app)
-app.logger.setLevel(logging.DEBUG)
+if app.debug:
+    toolbar = DebugToolbarExtension(app)
+    app.logger.setLevel(logging.DEBUG)
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['Content-Security-Policy'] = app.config['CONTENT_SECURITY_POLICY']
+    return response
 
 # API Routes
 api.add_resource(UserRegister, '/api/register')
+api.add_resource(UserLogin, '/api/login')
+api.add_resource(UserLogout, '/api/logout')
+api.add_resource(CurrentUser, '/api/me')
 api.add_resource(UserResource, '/api/users/<string:user_id>')
 api.add_resource(NotebookCreate, '/api/notebooks/create')
 api.add_resource(NotebookSave, '/api/notebooks/save/<string:notebook_id>')
@@ -85,20 +95,18 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    next_page = request.args.get('next') or url_for('index')
+    if not next_page.startswith('/') or next_page.startswith('//'):
+        next_page = url_for('index')
+    if request.method == 'GET' and get_user_info_from_token()['is_authenticated']:
+        return redirect(next_page)
     if request.method == 'POST':
-        token = authenticate_user(request.form['username'], request.form['password'])
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        token = authenticate_user(username, password)
         if token:
-            next_page = request.args.get('next')
             response = redirect(next_page)
-            response.set_cookie(
-                key='jwt_token1',
-                value=token,
-                httponly=True,
-                secure=True,
-                samesite='Strict',
-                max_age=3600,
-                path='/'
-            )
+            set_auth_cookie(response, token)
             logging.info(f"User {request.form['username']} logged in")
             return response
         else:
@@ -109,8 +117,13 @@ def login():
 @limiter.limit("5 per minute")
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        if len(username) < 3 or len(password) < 8:
+            return render_template(
+                'register.html',
+                error_message='Username must be at least 3 characters and password at least 8 characters.'
+            ), 400
         
         # Check if user already exists
         if get_user_by_username(username):
@@ -121,12 +134,13 @@ def register():
         # Create user and associated notebook
         user_id = create_user(username, password)
         if user_id:
-            # Create a new notebook with the title and slug as the username
+            # Create a notebook and authenticate the new user immediately.
             notebook_id = create_notebook(user_id)
-            notebook = get_notebook(notebook_id,user_id)
-            if notebook:
-                notebook['_id'] = str(notebook['_id'])
-                return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), id=notebook['_id'], is_author=True, username=username, is_authenticated=True)
+            token = generate_token(user_id)
+            response = redirect(url_for('edit_notebook', identifier=notebook_id))
+            set_auth_cookie(response, token)
+            logging.info(f"User {username} registered and logged in")
+            return response
         else:
             return render_template('error.html', error="Failed to create user.")
     else:
@@ -135,12 +149,16 @@ def register():
 @app.route('/create')
 def create():
     user_info = get_user_info_from_token()
+    if not user_info['is_authenticated']:
+        return redirect(url_for('login', next=request.path))
     notebook_id = create_notebook(user_info['user_id'])
     return render_template('edit.html', notebook_id=notebook_id, **user_info)
 
 @app.route('/create_fromtemplate/<slugid>')
 def create_fromtemplate(slugid):
     user_info = get_user_info_from_token()
+    if not user_info['is_authenticated']:
+        return redirect(url_for('login', next=request.path))
     user_id=user_info['user_id']
     notebook={}
     if slugid=="blank":
@@ -154,16 +172,14 @@ def create_fromtemplate(slugid):
     return render_template('edit.html', notebook_id=notebook_id, **user_info)
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['GET', 'POST'])
 def logout():
     user_info = get_user_info_from_token()
     if user_info['is_authenticated']:
         logging.info(f"User {user_info['username']} logged out")
     session.clear()
-    response = make_response(redirect(url_for('index')))
-    for cookie in request.cookies:
-        response.set_cookie(cookie, '', expires=0)
-    return response
+    response = make_response(redirect(url_for('login')))
+    return clear_auth_cookie(response)
 
 @app.route('/slug/<slug>')
 def notebook(slug):
@@ -214,9 +230,11 @@ def notebookid(id):
 @app.route('/edit/<identifier>')
 def edit_notebook(identifier):
     user_info = get_user_info_from_token()
+    if not user_info['is_authenticated']:
+        return redirect(url_for('login', next=request.path))
     return render_template('edit.html', notebook_id=identifier, **user_info)
 
-JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
+JUPYTERLITE_PATH = app.config['JUPYTERLITE_PATH']
 
 # Route to serve JupyterLite static files
 @app.route('/jupyterlite/<path:filename>')

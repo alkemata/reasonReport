@@ -1,51 +1,63 @@
-from flask import current_app
-from .models import bcrypt, users_collection
+"""Administrative user helpers backed by the active PyMongo models."""
+
+from werkzeug.security import generate_password_hash
+
+from .models import create_user as create_user_record
+from .models import mongo
+
+
+def _public_user(user):
+    return {
+        'id': str(user['_id']),
+        'username': user['username'],
+        'status': user.get('status', 'basic'),
+        'landing_page': user.get('landing_page'),
+    }
+
 
 def list_users():
-    """List all users in the database."""
-    with current_app.app_context():
-        users = users_collection.find()
-        return list(users)
+    """Return users without exposing password hashes."""
+    return [_public_user(user) for user in mongo.db.users.find()]
+
 
 def create_user(username, password, status='basic'):
-    """Create a new user with a given username, password, and status."""
-    with current_app.app_context():
-        existing_user = users_collection.find_one({"username": username})
-        if existing_user:
-            return f"User '{username}' already exists."
+    """Create a user using the same validation and hashing as registration."""
+    user_id = create_user_record(
+        username,
+        password,
+        additional_fields={'status': status},
+    )
+    if not user_id:
+        return f"User '{username}' already exists."
+    return f"User '{username}' created successfully."
 
-        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        users_collection.insert_one({
-            "username": username,
-            "password": hashed_password,
-            "status": status
-        })
-        return f"User '{username}' created successfully."
 
 def modify_user(username, new_password=None, new_status=None):
-    """Modify a user's password and/or status."""
-    with current_app.app_context():
-        user = users_collection.find_one({"username": username})
-        if not user:
-            return f"User '{username}' not found."
+    """Modify password and/or status for an existing user."""
+    user = mongo.db.users.find_one({'username': username})
+    if not user:
+        return f"User '{username}' not found."
 
-        update_fields = {}
-        if new_password:
-            hashed_password = bcrypt.generate_password_hash(new_password).decode('utf-8')
-            update_fields["password"] = hashed_password
-        if new_status:
-            update_fields["status"] = new_status
+    update_fields = {}
+    if new_password:
+        if len(new_password) < 8:
+            raise ValueError('Password must be at least 8 characters')
+        update_fields['password'] = generate_password_hash(new_password)
+    if new_status:
+        update_fields['status'] = new_status
 
-        if update_fields:
-            users_collection.update_one({"username": username}, {"$set": update_fields})
-            return f"User '{username}' updated successfully."
-        else:
-            return f"No updates provided for user '{username}'."
+    if not update_fields:
+        return f"No updates provided for user '{username}'."
+    mongo.db.users.update_one({'_id': user['_id']}, {'$set': update_fields})
+    return f"User '{username}' updated successfully."
+
 
 def delete_user(username):
-    """Delete a user from the database."""
-    with current_app.app_context():
-        result = users_collection.delete_one({"username": username})
-        if result.deleted_count == 0:
-            return f"User '{username}' not found."
-        return f"User '{username}' deleted successfully."
+    """Delete a user and all notebooks authored by that user."""
+    user = mongo.db.users.find_one({'username': username})
+    if not user:
+        return f"User '{username}' not found."
+    user_id = str(user['_id'])
+    mongo.db.users.delete_one({'_id': user['_id']})
+    mongo.db.notebooks.delete_many({'author': user_id})
+    return f"User '{username}' deleted successfully."
