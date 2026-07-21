@@ -243,6 +243,22 @@ docker compose exec mongo mongosh flaskdb --eval \
   'db.users.find({}, {username: 1}).pretty()'
 ```
 
+Verify login, the current-user endpoint, and logout with a cookie jar:
+
+```bash
+curl -k -c /tmp/reasonreport-cookies.txt -X POST \
+  -d 'username=<username>&password=<password>' \
+  'https://rr.alkemata.com/login?next=/'
+curl -k -b /tmp/reasonreport-cookies.txt \
+  'https://rr.alkemata.com/api/me'
+curl -k -b /tmp/reasonreport-cookies.txt -c /tmp/reasonreport-cookies.txt \
+  -X POST 'https://rr.alkemata.com/api/logout'
+```
+
+If the browser returns to `/login`, inspect the form POST in developer tools.
+The request URL must preserve the destination, such as
+`/login?next=/edit/<notebook-id>`, and its response must set `jwt_token1`.
+
 ## Local development
 
 The checked-in Compose file does not publish Flask port 5000 to the host and
@@ -320,8 +336,6 @@ docker compose exec -T mongo mongodump --archive --db flaskdb \
 Before treating the deployment as production-ready, address these existing
 application issues:
 
-- move the hard-coded Flask/JWT secrets to environment variables;
-- disable Flask debug mode and the debug toolbar;
 - protect or remove the `/database` debugging endpoint;
 - add health checks and automated API/browser tests;
 - ensure converted notebook HTML is sanitized or isolated appropriately.

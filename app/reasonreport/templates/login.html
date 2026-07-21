@@ -2,12 +2,12 @@
 {% extends "base.html" %}
 {% block content %}
     <h2>Login</h2>
-    <form id="login-form" action="{{ url_for('login', next=request.path) }}" method="POST">
+    <form id="login-form" action="{{ url_for('login', next=request.args.get('next', '/')) }}" method="POST">
         <label for="login-username">Username:</label>
-        <input type="text" id="login-username" name="username" required>
+        <input type="text" id="login-username" name="username" autocomplete="username" required>
         <br>
         <label for="login-password">Password:</label>
-        <input type="password" id="login-password" name="password" required>
+        <input type="password" id="login-password" name="password" autocomplete="current-password" required>
         <br>
         <button type="submit">Login</button>
     </form>

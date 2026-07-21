@@ -1,12 +1,12 @@
 # resources.py
 from flask_restful import Resource, reqparse
-from flask import request
+from flask import jsonify, make_response, request
 from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
     create_notebook_content, create_new_notebook, save_notebook, get_notebook, delete_notebook
 )
-from utils import token_required,generate_token
-from werkzeug.security import check_password_hash
+from utils import clear_auth_cookie, set_auth_cookie, token_required, generate_token
+from werkzeug.security import check_password_hash, generate_password_hash
 import logging
 
 # User Registration
@@ -18,10 +18,17 @@ class UserRegister(Resource):
         args = parser.parse_args()
 
         try:
-            user_id = create_user(args['username'], args['password'])
+            username = args['username'].strip()
+            user_id = create_user(username, args['password'])
             if user_id:
-                logging.info(f"User {args['username']} created successfully")
-                return {'message': 'User created successfully', 'user_id': user_id}, 201
+                token = generate_token(user_id)
+                response = make_response(jsonify({
+                    'message': 'User created successfully',
+                    'user': {'id': user_id, 'username': username}
+                }), 201)
+                set_auth_cookie(response, token)
+                logging.info(f"User {username} created successfully")
+                return response
             else:
                 return {'message': 'Username already exists'}, 400
         except ValueError as e:
@@ -29,13 +36,44 @@ class UserRegister(Resource):
 
 # User Login
 def authenticate_user(username, password):
-        
-        user = get_user_by_username(username)
-        if not user or not check_password_hash(user['password'], password):
-            return None
+    if not username or not password:
+        return None
+    user = get_user_by_username(username.strip())
+    if not user or not check_password_hash(user['password'], password):
+        return None
 
-        token = generate_token(str(user['_id']))
-        return token
+    return generate_token(str(user['_id']))
+
+
+def public_user(user):
+    return {
+        'id': str(user['_id']),
+        'username': user['username'],
+        'landing_page': user.get('landing_page')
+    }
+
+
+class UserLogin(Resource):
+    def post(self):
+        payload = request.get_json(silent=True) or request.form
+        token = authenticate_user(payload.get('username', ''), payload.get('password', ''))
+        if not token:
+            return {'message': 'Invalid credentials'}, 401
+        user = get_user_by_username(payload.get('username', '').strip())
+        response = make_response(jsonify({'user': public_user(user)}), 200)
+        return set_auth_cookie(response, token)
+
+
+class UserLogout(Resource):
+    def post(self):
+        return clear_auth_cookie(make_response(jsonify({'message': 'Logged out'}), 200))
+
+
+class CurrentUser(Resource):
+    @token_required
+    def get(self):
+        user = get_user_by_id(request.user['id'])
+        return {'user': public_user(user)}, 200
 
         
 
@@ -46,8 +84,9 @@ class UserResource(Resource):
         user = get_user_by_id(user_id)
         if not user:
             return {'message': 'User not found'}, 404
-        user['_id'] = str(user['_id'])
-        return {'user': user}, 200
+        if request.user['id'] != user_id:
+            return {'message': 'Unauthorized'}, 403
+        return {'user': public_user(user)}, 200
     
     @token_required
     def put(self, user_id):
@@ -62,9 +101,16 @@ class UserResource(Resource):
         
         update_fields = {}
         if args['username']:
-            update_fields['username'] = args['username']
+            username = args['username'].strip()
+            if len(username) < 3:
+                return {'message': 'Username must be at least 3 characters'}, 400
+            existing = get_user_by_username(username)
+            if existing and str(existing['_id']) != user_id:
+                return {'message': 'Username already exists'}, 409
+            update_fields['username'] = username
         if args['password']:
-            from werkzeug.security import generate_password_hash
+            if len(args['password']) < 8:
+                return {'message': 'Password must be at least 8 characters'}, 400
             update_fields['password'] = generate_password_hash(args['password'])
         
         if update_fields:
@@ -77,8 +123,10 @@ class UserResource(Resource):
     def delete(self, user_id):
         if request.user['id'] != user_id:
             return {'message': 'Unauthorized'}, 403
-        delete_user(user_id)
-        return {'message': 'User deleted successfully'}, 200
+        if not delete_user(user_id):
+            return {'message': 'User not found'}, 404
+        response = make_response(jsonify({'message': 'User deleted successfully'}), 200)
+        return clear_auth_cookie(response)
 
 # Notebook Operations
 class NotebookCreate(Resource): #todo add logic to validate the notebook

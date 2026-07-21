@@ -12,6 +12,11 @@ mongo = PyMongo()
 
 # User Operations
 def create_user(username, password, landing_page=None, additional_fields=None):
+    username = username.strip()
+    if len(username) < 3:
+        raise ValueError('Username must be at least 3 characters')
+    if len(password) < 8:
+        raise ValueError('Password must be at least 8 characters')
     if mongo.db.users.find_one({'username': username}):
         return None
     
@@ -31,13 +36,22 @@ def get_user_by_username(username):
     return mongo.db.users.find_one({'username': username})
 
 def get_user_by_id(user_id):
+    if not ObjectId.is_valid(str(user_id)):
+        return None
     return mongo.db.users.find_one({'_id': ObjectId(user_id)})
 
 def update_user(user_id, update_fields):
-    mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_fields})
+    if not ObjectId.is_valid(str(user_id)):
+        return False
+    result = mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_fields})
+    return result.matched_count > 0
 
 def delete_user(user_id):
-    mongo.db.users.delete_one({'_id': ObjectId(user_id)})   
+    if not ObjectId.is_valid(str(user_id)):
+        return False
+    result = mongo.db.users.delete_one({'_id': ObjectId(user_id)})
+    mongo.db.notebooks.delete_many({'author': str(user_id)})
+    return result.deleted_count > 0
 
 
 # Notebook Operations
