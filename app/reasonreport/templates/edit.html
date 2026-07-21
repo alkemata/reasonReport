@@ -3,7 +3,8 @@
 {% block content %}
 <div>
     <iframe
-        src="{{ url_for('jupyterlite') }}"
+        data-editor-url="{{ url_for('jupyterlite') }}"
+        data-document-id="{{ notebook_id|e }}"
         class="iframe-container"
         id="jupyterlite-iframe"
         title="ReasonReport notebook editor"
@@ -11,80 +12,5 @@
         width="100%"
         height="600px"></iframe>
 </div>
-
-<script>
-(() => {
-    const documentId = {{ notebook_id|tojson }};
-    const iframe = document.getElementById('jupyterlite-iframe');
-    const expectedOrigin = window.location.origin;
-    let editorReady = false;
-    let publishing = false;
-
-    function send(command) {
-        iframe.contentWindow.postMessage(
-            { source: 'reasonreport-parent', ...command },
-            expectedOrigin
-        );
-    }
-
-    function installEditorButtons() {
-        const createControl = document.querySelector('.dropdown');
-        if (createControl) createControl.style.display = 'none';
-
-        const authButtons = document.getElementById('auth-buttons');
-        if (!authButtons || document.getElementById('publish-button')) return;
-
-        const publishButton = document.createElement('button');
-        publishButton.id = 'publish-button';
-        publishButton.textContent = 'Publish';
-        publishButton.addEventListener('click', () => {
-            if (!editorReady || publishing) return;
-            publishing = true;
-            publishButton.disabled = true;
-            publishButton.textContent = 'Publishing…';
-            send({
-                msgtype: 'publish',
-                documentId,
-                requestId: crypto.randomUUID()
-            });
-        });
-
-        const closeButton = document.createElement('button');
-        closeButton.id = 'quit-editing-button';
-        closeButton.textContent = 'Close editor';
-        closeButton.addEventListener('click', () => {
-            window.location.assign(documentId === '-1' ? '/' : `/id/${documentId}`);
-        });
-
-        authButtons.append(publishButton, closeButton);
-    }
-
-    window.addEventListener('message', event => {
-        if (
-            event.origin !== expectedOrigin ||
-            event.source !== iframe.contentWindow ||
-            !event.data ||
-            event.data.source !== 'reasonreport-jupyterlite'
-        ) return;
-
-        const message = event.data;
-        if (message.msgtype === 'ready') {
-            installEditorButtons();
-            send({ msgtype: 'create', documentId });
-        } else if (message.msgtype === 'loaded') {
-            editorReady = true;
-        } else if (message.msgtype === 'publish-result') {
-            window.location.assign(`/id/${encodeURIComponent(message.documentId)}`);
-        } else if (message.msgtype === 'error') {
-            publishing = false;
-            const publishButton = document.getElementById('publish-button');
-            if (publishButton) {
-                publishButton.disabled = false;
-                publishButton.textContent = 'Publish';
-            }
-            window.alert(message.message || 'The notebook operation failed.');
-        }
-    });
-})();
-</script>
+<script src="{{ url_for('static', filename='js/edit.js') }}"></script>
 {% endblock %}
