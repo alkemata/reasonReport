@@ -72,23 +72,22 @@ container to the network.
 
 ## 4. Configure production secrets
 
-Before exposing the application publicly, replace the development Flask and JWT
-secrets in `app/reasonreport/config.py` with environment-backed values. Generate
-strong values with:
+Before exposing the application publicly, generate strong Flask and JWT secrets:
 
 ```bash
 openssl rand -hex 32
 openssl rand -hex 32
 ```
 
-The current application code must be adjusted to read these variables before
-putting them in a local, uncommitted `.env` file:
+Put them in a local, uncommitted `.env` file. The Compose service passes these
+environment-backed settings to Flask:
 
 ```dotenv
 SECRET_KEY=<first-generated-value>
 JWT_SECRET_KEY=<second-generated-value>
 MONGO_URI=mongodb://mongo:27017/flaskdb
 JUPYTERLITE_PATH=/opt/jupyterlite
+JWT_COOKIE_SECURE=true
 ```
 
 Never commit real production secrets.
@@ -218,9 +217,9 @@ docker compose logs --tail=200 flaskapprr
 ## 10. Exercise the notebook workflow
 
 1. Open `https://rr.alkemata.com/register` and create an account.
-2. Registration currently does not establish the JWT cookie, so next open
-   `https://rr.alkemata.com/login?next=/` and log in.
-3. Choose **Create Notebook → Blank**.
+2. Registration authenticates the new account and redirects directly to its
+   initial notebook editor.
+3. To create another notebook, choose **Create Notebook → Blank**.
 4. Wait for JupyterLite to load inside the page and open the notebook.
 5. Keep the cells carrying `type: title` and `type: date` metadata non-empty.
 6. Edit the title and notebook content.
@@ -265,10 +264,9 @@ docker network inspect traefik_web >/dev/null 2>&1 \
 docker compose up --build
 ```
 
-The pages are then available at `http://localhost:5000`. Be aware that the
-current login route always marks its JWT cookie `Secure`; authentication over
-plain HTTP may therefore be rejected by the browser. Use local HTTPS, or make
-the cookie's secure setting environment-dependent for development.
+The pages are then available at `http://localhost:5000`. For plain HTTP local
+development, set `JWT_COOKIE_SECURE=false` in the local `.env` file. Keep it
+`true` for the HTTPS production deployment.
 
 ## Updating a deployment
 
@@ -325,7 +323,5 @@ application issues:
 - move the hard-coded Flask/JWT secrets to environment variables;
 - disable Flask debug mode and the debug toolbar;
 - protect or remove the `/database` debugging endpoint;
-- make registration establish an authenticated session;
-- make the `Secure` cookie setting configurable for local development;
 - add health checks and automated API/browser tests;
 - ensure converted notebook HTML is sanitized or isolated appropriately.

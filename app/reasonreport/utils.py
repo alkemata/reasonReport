@@ -4,20 +4,20 @@ from flask import request, jsonify, session
 from models import get_user_by_username, get_user_by_id
 from werkzeug.security import check_password_hash
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from config import Config
 
 def generate_token(user_id):
     payload = {
         'user_id': user_id,
-        'exp': datetime.utcnow() + timedelta(hours=24)
+        'exp': datetime.now(timezone.utc) + timedelta(seconds=Config.JWT_ACCESS_TOKEN_EXPIRES)
     }
-    token = jwt.encode(payload, Config.SECRET_KEY, algorithm='HS256')
+    token = jwt.encode(payload, Config.JWT_SECRET_KEY, algorithm='HS256')
     return token
 
 def decode_token(token):
     try:
-        payload = jwt.decode(token, Config.SECRET_KEY, algorithms=['HS256'])
+        payload = jwt.decode(token, Config.JWT_SECRET_KEY, algorithms=['HS256'])
         return payload['user_id']
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None

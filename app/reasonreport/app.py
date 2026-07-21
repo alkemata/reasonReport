@@ -7,7 +7,7 @@ from resources import (
     UserRegister, UserResource,
     NotebookCreate, NotebookSave, NotebookQuery, NotebookDelete, authenticate_user
 )
-from utils import decode_token
+from utils import decode_token, generate_token
 from bson.objectid import ObjectId
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
@@ -49,6 +49,19 @@ logging.basicConfig(filename='user_actions.log', level=logging.INFO, format='%(a
 
 
 # Function to handle token retrieval and user info extraction
+def set_auth_cookie(response, token):
+    response.set_cookie(
+        key='jwt_token1',
+        value=token,
+        httponly=True,
+        secure=app.config['JWT_COOKIE_SECURE'],
+        samesite='Strict',
+        max_age=app.config['JWT_ACCESS_TOKEN_EXPIRES'],
+        path='/'
+    )
+    return response
+
+
 def get_user_info_from_token():
     token = request.cookies.get('jwt_token1')
     if token:
@@ -95,17 +108,11 @@ def login():
     if request.method == 'POST':
         token = authenticate_user(request.form['username'], request.form['password'])
         if token:
-            next_page = request.args.get('next')
+            next_page = request.args.get('next') or url_for('index')
+            if not next_page.startswith('/') or next_page.startswith('//'):
+                next_page = url_for('index')
             response = redirect(next_page)
-            response.set_cookie(
-                key='jwt_token1',
-                value=token,
-                httponly=True,
-                secure=True,
-                samesite='Strict',
-                max_age=3600,
-                path='/'
-            )
+            set_auth_cookie(response, token)
             logging.info(f"User {request.form['username']} logged in")
             return response
         else:
@@ -128,12 +135,13 @@ def register():
         # Create user and associated notebook
         user_id = create_user(username, password)
         if user_id:
-            # Create a new notebook with the title and slug as the username
+            # Create a notebook and authenticate the new user immediately.
             notebook_id = create_notebook(user_id)
-            notebook = get_notebook(notebook_id,user_id)
-            if notebook:
-                notebook['_id'] = str(notebook['_id'])
-                return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), id=notebook['_id'], is_author=True, username=username, is_authenticated=True)
+            token = generate_token(user_id)
+            response = redirect(url_for('edit_notebook', identifier=notebook_id))
+            set_auth_cookie(response, token)
+            logging.info(f"User {username} registered and logged in")
+            return response
         else:
             return render_template('error.html', error="Failed to create user.")
     else:

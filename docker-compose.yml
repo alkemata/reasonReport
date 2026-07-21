@@ -34,6 +34,9 @@ services:
       - PYTHONUNBUFFERED=1
       - MONGO_URI=mongodb://mongo:27017/flaskdb
       - JUPYTERLITE_PATH=/opt/jupyterlite
+      - SECRET_KEY=${SECRET_KEY:-development-flask-key-change-me-32}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-development-jwt-key-change-me-32}
+      - JWT_COOKIE_SECURE=${JWT_COOKIE_SECURE:-true}
 
 
 networks:

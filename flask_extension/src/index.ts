@@ -49,7 +49,7 @@ function isCommand(value: unknown): value is ParentCommand {
 async function requestJSON(url: string, init: RequestInit = {}): Promise<any> {
   const response = await fetch(url, {
     ...init,
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       ...(init.body ? { 'Content-Type': 'application/json' } : {}),
