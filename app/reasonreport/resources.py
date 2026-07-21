@@ -1,14 +1,13 @@
 # resources.py
 from flask_restful import Resource, reqparse
-from flask import request, jsonify,  make_response, current_app
+from flask import request
 from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
-    create_notebook, create_new_notebook,save_notebook, get_notebook, delete_notebook
+    create_notebook_content, create_new_notebook, save_notebook, get_notebook, delete_notebook
 )
-from notebooks import create_blank_notebook
 from utils import token_required,generate_token
 from werkzeug.security import check_password_hash
-import json
+import logging
 
 # User Registration
 class UserRegister(Resource):
@@ -86,46 +85,46 @@ class NotebookCreate(Resource): #todo add logic to validate the notebook
     @token_required
     def post(self):
         author_id = request.user['id']
-        nb=request.get_json()
-        id=create_new_notebbok(nb)
-        return {'message': 'Notebook created', 'notebook_id': id}, 201
+        payload = request.get_json(silent=True) or {}
+        try:
+            notebook_id = create_new_notebook(author_id, payload)
+        except (ValueError, TypeError) as error:
+            return {'message': str(error)}, 400
+        return {'message': 'Notebook created', 'notebook_id': notebook_id}, 201
 
 class NotebookSave(Resource):
     @token_required
     def put(self, notebook_id):
-        parser = reqparse.RequestParser()
-        parser.add_argument('notebook', required=True, help="Notebook JSON is required")
-        args = parser.parse_args()
-        nb=request.get_json()
-        #print(nb)
-        current_app.logger.info(nb)
-        
-        notebook = get_notebook(notebook_id) # for checking authour
-        if not notebook:
+        payload = request.get_json(silent=True) or {}
+        notebook = get_notebook(notebook_id, request.user['id'])
+        if not notebook or notebook.get('message') == 'not found':
             return {'message': 'Notebook not found'}, 404
+        if notebook.get('message') == 'not_authorized':
+            return {'message': 'Unauthorized access to this notebook'}, 403
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
-        result=save_notebook(notebook_id, nb)
-        if result == 'ok':
-            return {'message': 'OK'}, 200
-        else:
-            return {'message':'Formatting issue'},500
+        try:
+            result = save_notebook(notebook_id, request.user['id'], payload)
+        except (ValueError, TypeError) as error:
+            return {'message': str(error)}, 400
+        if result != 'ok':
+            return {'message': 'Notebook not found'}, 404
+        return {'message': 'OK', 'notebook_id': notebook_id}, 200
 
 class NotebookQuery(Resource):
     @token_required
     def get(self,notebook_id):
                 
-        if not notebook_id and not slug:
-            return {'message': 'Provide either id or slug as query parameter'}, 400
         user_id=request.user['id']
-        query = notebook_id if notebook_id else slug
-        if query=='-1':
-            notebook=create_blank_notebook()
+        if notebook_id == '-1':
+            return {'notebook': create_notebook_content(user_id)}, 200
         else:
-            notebook = get_notebook(query,user_id)
+            notebook = get_notebook(notebook_id,user_id)
         
-        if not notebook:
+        if not notebook or notebook.get('message') == 'not found':
             return {'message': 'Notebook not found'}, 404
+        if notebook.get('message') == 'not_authorized':
+            return {'message': 'Unauthorized access to this notebook'}, 403
         #notebook['date']=notebook['date'].isoformat()
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
@@ -136,10 +135,11 @@ class NotebookQuery(Resource):
 class NotebookDelete(Resource):
     @token_required
     def delete(self, notebook_id):
-        notebook = get_notebook(notebook_id)
-        if not notebook:
+        notebook = get_notebook(notebook_id, request.user['id'])
+        if not notebook or notebook.get('message') == 'not found':
             return {'message': 'Notebook not found'}, 404
-        
+        if notebook.get('message') == 'not_authorized':
+            return {'message': 'Unauthorized'}, 403
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized'}, 403
         
