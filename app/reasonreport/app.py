@@ -18,7 +18,7 @@ from notebooks import create_blank_notebook
 app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
-app.debug = True
+app.debug = Config.DEBUG
 limiter = Limiter(get_remote_address, app=app)
 
 # Initialize PyMongo
@@ -26,8 +26,15 @@ mongo.init_app(app)
 
 # Initialize Flask-RESTful API
 api = Api(app)
-toolbar = DebugToolbarExtension(app)
-app.logger.setLevel(logging.DEBUG)
+if app.debug:
+    toolbar = DebugToolbarExtension(app)
+    app.logger.setLevel(logging.DEBUG)
+
+
+@app.after_request
+def add_security_headers(response):
+    response.headers['Content-Security-Policy'] = app.config['CONTENT_SECURITY_POLICY']
+    return response
 
 # API Routes
 api.add_resource(UserRegister, '/api/register')

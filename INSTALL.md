@@ -181,6 +181,20 @@ docker compose exec flaskapprr \
   test -f /opt/jupyterlite/index.html
 ```
 
+Check the effective Content Security Policy:
+
+```bash
+curl -sSI https://rr.alkemata.com/jupyterlite/ \
+  | grep -i '^content-security-policy:'
+```
+
+There must be only one effective policy. JupyterLite requires same-origin
+scripts, WebAssembly/eval support, blob workers, and inline styles used by
+JupyterLab's widget layout. If Traefik or another proxy adds a second stricter
+`Content-Security-Policy` header, remove that middleware for ReasonReport or
+make its policy match the application policy. Multiple CSP headers are enforced
+together, so Flask cannot loosen a stricter policy added by the proxy.
+
 If `/jupyterlite/` fails, inspect both the image contents and Flask log:
 
 ```bash

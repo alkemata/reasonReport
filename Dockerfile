@@ -17,7 +17,9 @@ RUN extension_dir="$(python -c 'import sysconfig; print(sysconfig.get_path("data
     && mkdir -p "$extension_dir" \
     && cp -a jupyter_flask_extension_py/labextension/. "$extension_dir/"
 RUN jupyter lite build --output-dir=/opt/jupyterlite
+COPY scripts/externalize_inline_scripts.py /usr/local/bin/externalize-inline-scripts
+RUN externalize-inline-scripts /opt/jupyterlite
 
 WORKDIR /app/reasonreport
 ENV JUPYTERLITE_PATH=/opt/jupyterlite
-CMD flask run --debug -h 0.0.0.0 -p 5000
+CMD flask run -h 0.0.0.0 -p 5000
