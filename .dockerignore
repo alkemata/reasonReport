@@ -5,3 +5,6 @@ flask_extension/node_modules
 flask_extension/lib
 flask_extension/jupyter_flask_extension_py/labextension
 flask_extension/tsconfig.tsbuildinfo
+__pycache__/
+*.py[cod]
+*.log
