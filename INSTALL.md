@@ -121,6 +121,13 @@ For a clean build with complete diagnostic output:
 docker compose build --no-cache --progress=plain flaskapprr
 ```
 
+The Dockerfile keeps dependency installation, TypeScript/extension compilation,
+extension registration, and the JupyterLite site build in separate layers. The
+last successful `RUN` line therefore identifies which stage failed. If Docker
+only prints a combined shell-command error, pull the latest revision before
+retrying: older revisions used a single `jlpm` build step with a lockfile that
+did not describe this standalone extension package.
+
 The build downloads Python and JavaScript packages, compiles
 `flask_extension/src/index.ts`, installs the resulting federated extension, and
 runs `jupyter lite build`. Internet access to PyPI and the Yarn/npm registries is

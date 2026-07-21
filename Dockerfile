@@ -11,13 +11,12 @@ RUN apt-get update \
 
 COPY flask_extension /build/flask_extension
 WORKDIR /build/flask_extension
-RUN jlpm install \
-    && jlpm build:prod \
-    && extension_dir="$(python -c 'import sysconfig; print(sysconfig.get_path("data"))')/share/jupyter/labextensions/jupyter_flask_extension" \
+RUN npm ci --no-audit --no-fund
+RUN npm run build:prod
+RUN extension_dir="$(python -c 'import sysconfig; print(sysconfig.get_path("data"))')/share/jupyter/labextensions/jupyter_flask_extension" \
     && mkdir -p "$extension_dir" \
-    && cp -a jupyter_flask_extension_py/labextension/. "$extension_dir/" \
-    && jupyter lite build --output-dir=/opt/jupyterlite \
-    && rm -rf node_modules
+    && cp -a jupyter_flask_extension_py/labextension/. "$extension_dir/"
+RUN jupyter lite build --output-dir=/opt/jupyterlite
 
 WORKDIR /app/reasonreport
 ENV JUPYTERLITE_PATH=/opt/jupyterlite
