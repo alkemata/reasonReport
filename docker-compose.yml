@@ -19,8 +19,6 @@ services:
     build: .
     volumes:
       - ./app:/app/
-    environment:
-      - PYTHONUNBUFFERED=1
     labels:
       traefik.enable: true
       traefik.docker.network: traefik_web
@@ -33,7 +31,9 @@ services:
     depends_on:
       - mongo
     environment:
+      - PYTHONUNBUFFERED=1
       - MONGO_URI=mongodb://mongo:27017/flaskdb
+      - JUPYTERLITE_PATH=/opt/jupyterlite
 
 
 networks:
