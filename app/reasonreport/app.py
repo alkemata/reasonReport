@@ -216,7 +216,7 @@ def edit_notebook(identifier):
     user_info = get_user_info_from_token()
     return render_template('edit.html', notebook_id=identifier, **user_info)
 
-JUPYTERLITE_PATH = './_output'  # Change this to the path where JupyterLite files are stored
+JUPYTERLITE_PATH = app.config['JUPYTERLITE_PATH']
 
 # Route to serve JupyterLite static files
 @app.route('/jupyterlite/<path:filename>')

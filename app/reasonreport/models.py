@@ -42,6 +42,20 @@ def delete_user(user_id):
 
 # Notebook Operations
 def create_notebook(author_id):
+    nb = create_notebook_content(author_id)
+    notebook = {
+        'notebook': nb,
+        'author': author_id,
+        'date': datetime.utcnow(),
+        'title': "",
+        'slug': "",
+        'is_public': False
+    }
+    result = mongo.db.notebooks.insert_one(notebook)
+    return str(result.inserted_id)
+
+
+def create_notebook_content(author_id):
     nb = nbformat.v4.new_notebook()
     
     # Pre-processing: Add three cells with tags author, date, and title
@@ -67,46 +81,53 @@ def create_notebook(author_id):
     
     nb['cells'] = cells
     
-    notebook_json = nb
-    
-    # Slug based on username will be set in the frontend after registration
-    notebook = {
-        'notebook': notebook_json,
-        'author': author_id,
-        'date': datetime.utcnow(),
-        'title': "",
-        'slug': "",  # To be updated after registration
-    }
-    
+    return nb
+
+def create_new_notebook(author_id, notebook_json):
+    notebook = build_notebook_document(author_id, notebook_json)
     result = mongo.db.notebooks.insert_one(notebook)
     return str(result.inserted_id)
 
-def create_new_notebook(notebook_json):
-    result = mongo.db.notebooks.insert_one(notebook_json)
-    return str(result.inserted_id)
-
-def save_notebook(notebook_id, notebook_json):
-    #notebook_json = notebook_json.replace("'", '"')
-    nb = nbformat.from_dict(notebook_json['notebook'])
-
-    result=find_metadata_cells(nb)
-    if result=="error":
-        return "error"
-    update_fields = {
-        'notebook': nb,
-        'author': result['author'],
-        'slug':result['slug'],
-        'title':result['title'],
-        'date':result['date'],
-        'is_public': False  # Adding a flag to check if notebook is public
-    }
-    
+def save_notebook(notebook_id, author_id, notebook_json):
+    existing = mongo.db.notebooks.find_one({'_id': ObjectId(notebook_id)})
+    if not existing:
+        return "not_found"
+    update_fields = build_notebook_document(
+        author_id,
+        notebook_json,
+        existing_slug=existing.get('slug'),
+        notebook_id=notebook_id,
+        created_at=existing.get('date')
+    )
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
-    
-    # Ensure indexes
-    #mongo.db.notebooks.create_index([('slug', 1)], unique=True)
-    #mongo.db.notebooks.create_index([('author', 1)])
     return 'ok'
+
+
+def build_notebook_document(author_id, notebook_json, existing_slug=None,
+                            notebook_id=None, created_at=None):
+    """Validate notebook JSON and derive safe server-side publication fields."""
+    raw_notebook = notebook_json.get('notebook', notebook_json)
+    try:
+        nb = nbformat.from_dict(raw_notebook)
+        nbformat.validate(nb)
+    except Exception as error:
+        raise ValueError(f"Invalid notebook: {error}") from error
+    metadata = find_metadata_cells(nb)
+    if metadata == "error":
+        raise ValueError("Notebook requires non-empty title and date metadata cells")
+
+    initial_slug = slugify(metadata['title'])
+    if not initial_slug:
+        raise ValueError("Notebook title must produce a valid slug")
+    slug = existing_slug or ensure_unique_slug(initial_slug, notebook_id)
+    return {
+        'notebook': nb,
+        'author': str(author_id),
+        'slug': slug,
+        'title': metadata['title'],
+        'date': created_at or datetime.utcnow(),
+        'is_public': True
+    }
 
 def get_notebook(query, user_id):
     if isinstance(query, str) and ObjectId.is_valid(query):
@@ -139,7 +160,7 @@ def notebook_html(notebook):
     return body
 
 
-def ensure_unique_slug(initial_slug):
+def ensure_unique_slug(initial_slug, notebook_id=None):
     """
     Ensure the generated slug is unique in the database by appending a number if necessary.
 
@@ -150,9 +171,13 @@ def ensure_unique_slug(initial_slug):
     counter = 1
     
     # Keep checking if the slug exists in the database
-    while mongo.db.notebooks.find_one({'slug': slug}):
+    query = {'slug': slug}
+    if notebook_id:
+        query['_id'] = {'$ne': ObjectId(notebook_id)}
+    while mongo.db.notebooks.find_one(query):
         # If it exists, append or increment the counter to make it unique
         slug = f"{initial_slug}-{counter}"
+        query['slug'] = slug
         counter += 1
     
     return slug
@@ -168,7 +193,7 @@ def find_cells_by_metadata(notebook_json, key, value):
     :return: List of cells that match the given metadata key and value.
     """
     matching_cells = []
-    for cell in notebook_data.get('cells', []):
+    for cell in notebook_json.get('cells', []):
         metadata = cell.get('metadata', {})
         
         # Check if metadata contains the key and value
@@ -189,7 +214,7 @@ def find_metadata_cells(notebook_data):
     :param nb_path: Path to the Jupyter Notebook file (e.g., "notebook.ipynb").
     :return: A dictionary containing author, slug, and date if successful. Otherwise, raises an error.
     """
-    required_types = ["title", "author", "date"]
+    required_types = ["title", "date"]
     metadata_values = {key: None for key in required_types}
 
     # Iterate through the notebook cells to find required metadata
@@ -205,14 +230,8 @@ def find_metadata_cells(notebook_data):
     if missing_or_empty:
         return "error"
 
-    # Generate slug from title
-    slug = slugify(metadata_values['title'])
-    slug = ensure_unique_slug(slug)
-
     # Create and return the resulting structure
     result = {
-        'author': metadata_values['author'],
-        'slug': slug,
         'date': metadata_values['date'],
         'title':metadata_values['title']
     }

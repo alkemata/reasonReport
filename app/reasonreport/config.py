@@ -7,3 +7,4 @@ class Config:
     JWT_TOKEN_LOCATION='cookies'
     JWT_COOKIE_SECURE=False
     JWT_ACCESS_TOKEN_EXPIRES=86400
+    JUPYTERLITE_PATH = os.environ.get('JUPYTERLITE_PATH', './_output')
