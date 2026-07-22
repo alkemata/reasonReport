@@ -1,4 +1,6 @@
 # app.py
+import os
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response, flash
 from flask_restful import Api, Resource
 from config import Config
@@ -248,6 +250,32 @@ def edit_notebook(identifier):
     )
 
 JUPYTERLITE_PATH = app.config['JUPYTERLITE_PATH']
+
+
+@app.route('/jupyterlite/api/contents/all.json')
+def serve_jupyterlite_contents_manifest():
+    """Serve a valid root drive even when an older Lite build omitted it."""
+    manifest = os.path.join(JUPYTERLITE_PATH, 'api', 'contents', 'all.json')
+    if os.path.isfile(manifest):
+        return send_from_directory(os.path.dirname(manifest), 'all.json')
+
+    app.logger.warning(
+        'JupyterLite contents manifest is missing at %s; serving an empty drive',
+        manifest,
+    )
+    response = jsonify({
+        'content': [],
+        'format': 'json',
+        'mimetype': None,
+        'name': '',
+        'path': '',
+        'size': None,
+        'type': 'directory',
+        'writable': True,
+    })
+    response.headers['X-ReasonReport-JupyterLite-Fallback'] = 'empty-contents'
+    return response
+
 
 # Route to serve JupyterLite static files
 @app.route('/jupyterlite/<path:filename>')

@@ -1,11 +1,24 @@
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+sys.path.insert(0, str(Path('app/reasonreport').resolve()))
 from scripts.externalize_inline_scripts import externalize
 
 
 class JupyterLiteCspBuildTest(unittest.TestCase):
+    def test_docker_build_bundles_pyodide_for_same_origin_loading(self):
+        dockerfile = Path('Dockerfile').read_text(encoding='utf-8')
+
+        self.assertIn('pyodide-0.27.6.tar.bz2', dockerfile)
+        self.assertIn('/opt/jupyterlite/static/pyodide/pyodide.js', dockerfile)
+        self.assertIn('"pyodideUrl": "./static/pyodide/pyodide.js"', dockerfile)
+        self.assertIn('comm==0.2.2', dockerfile)
+        self.assertIn('--piplite-wheels=/build/piplite-wheels', dockerfile)
+        self.assertIn('/opt/jupyterlite/api/pypi/all.json', dockerfile)
+
     def test_externalizes_only_executable_inline_scripts(self):
         with tempfile.TemporaryDirectory() as directory:
             html_path = Path(directory, "index.html")
@@ -26,7 +39,11 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
             self.assertIn('src="./csp-inline-2.js"', updated)
             self.assertIn("script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'", updated)
             self.assertIn("style-src 'self' 'unsafe-inline'", updated)
-            self.assertIn('https://cdn.jsdelivr.net/pyodide/', updated)
+            self.assertNotIn('cdn.jsdelivr.net', updated)
+            self.assertIn(
+                "connect-src 'self' https://pypi.org https://files.pythonhosted.org",
+                updated,
+            )
             self.assertNotIn("content=\"default-src 'self' data:\"", updated)
             self.assertEqual(
                 Path(directory, "csp-inline-1.js").read_text(encoding="utf-8"),
@@ -40,6 +57,24 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
             self.assertNotIn("<style", content, name)
             self.assertNotIn("onclick=", content, name)
         self.assertNotIn("<script>", templates.joinpath("edit.html").read_text())
+
+    def test_missing_contents_manifest_returns_empty_drive(self):
+        import app as reasonreport_app
+
+        with tempfile.TemporaryDirectory() as directory, patch.object(
+            reasonreport_app, 'JUPYTERLITE_PATH', directory
+        ):
+            response = reasonreport_app.app.test_client().get(
+                '/jupyterlite/api/contents/all.json'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json['content'], [])
+        self.assertEqual(response.json['type'], 'directory')
+        self.assertEqual(
+            response.headers['X-ReasonReport-JupyterLite-Fallback'],
+            'empty-contents',
+        )
 
 
 if __name__ == "__main__":
