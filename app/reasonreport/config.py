@@ -12,10 +12,10 @@ class Config:
     CONTENT_SECURITY_POLICY = os.environ.get(
         'CONTENT_SECURITY_POLICY',
         "default-src 'self' data: blob:; "
-        "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; "
+        "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/; "
         "style-src 'self' 'unsafe-inline'; "
         "worker-src 'self' blob:; "
-        "connect-src 'self'; "
+        "connect-src 'self' https://cdn.jsdelivr.net/pyodide/; "
         "frame-src 'self'; "
         "img-src 'self' data: blob:; "
         "font-src 'self' data:"

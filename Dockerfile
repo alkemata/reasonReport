@@ -16,7 +16,11 @@ RUN npm run build:prod
 RUN extension_dir="$(python -c 'import sysconfig; print(sysconfig.get_path("data"))')/share/jupyter/labextensions/jupyter_flask_extension" \
     && mkdir -p "$extension_dir" \
     && cp -a jupyter_flask_extension_py/labextension/. "$extension_dir/"
-RUN jupyter lite build --output-dir=/opt/jupyterlite
+COPY jupyterlite-content /build/jupyterlite-content
+RUN jupyter lite build \
+    --contents=/build/jupyterlite-content \
+    --output-dir=/opt/jupyterlite \
+    && test -f /opt/jupyterlite/api/contents/all.json
 COPY scripts/externalize_inline_scripts.py /usr/local/bin/externalize-inline-scripts
 RUN externalize-inline-scripts /opt/jupyterlite
 

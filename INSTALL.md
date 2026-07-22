@@ -132,6 +132,11 @@ The build downloads Python and JavaScript packages, compiles
 runs `jupyter lite build`. Internet access to PyPI and the Yarn/npm registries is
 therefore required during this step.
 
+The build also seeds the JupyterLite contents service from
+`jupyterlite-content/` and verifies that `api/contents/all.json` exists. The
+Pyodide kernel currently loads its pinned runtime from jsDelivr, so production
+clients must be able to reach `https://cdn.jsdelivr.net/pyodide/`.
+
 ## 7. Start and verify MongoDB
 
 ```bash

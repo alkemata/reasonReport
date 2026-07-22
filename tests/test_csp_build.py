@@ -26,6 +26,7 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
             self.assertIn('src="./csp-inline-2.js"', updated)
             self.assertIn("script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'", updated)
             self.assertIn("style-src 'self' 'unsafe-inline'", updated)
+            self.assertIn('https://cdn.jsdelivr.net/pyodide/', updated)
             self.assertNotIn("content=\"default-src 'self' data:\"", updated)
             self.assertEqual(
                 Path(directory, "csp-inline-1.js").read_text(encoding="utf-8"),
