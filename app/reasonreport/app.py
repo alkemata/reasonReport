@@ -7,6 +7,10 @@ from resources import (
     CurrentUser, UserLogin, UserLogout, UserRegister, UserResource,
     NotebookCreate, NotebookSave, NotebookQuery, NotebookDelete, authenticate_user
 )
+from editor_api import (
+    EditorNotebookList, EditorNotebookQuery, EditorNotebookRead, EditorSession,
+    create_editor_launch
+)
 from utils import clear_auth_cookie, decode_token, generate_token, set_auth_cookie
 from bson.objectid import ObjectId
 from flask_debugtoolbar import DebugToolbarExtension
@@ -46,6 +50,10 @@ api.add_resource(NotebookCreate, '/api/notebooks/create')
 api.add_resource(NotebookSave, '/api/notebooks/save/<string:notebook_id>')
 api.add_resource(NotebookQuery, '/api/notebooks/query/<string:notebook_id>')
 api.add_resource(NotebookDelete, '/api/notebooks/<string:notebook_id>/delete')
+api.add_resource(EditorSession, '/api/editor/session')
+api.add_resource(EditorNotebookList, '/api/editor/notebooks')
+api.add_resource(EditorNotebookRead, '/api/editor/notebooks/<string:notebook_id>')
+api.add_resource(EditorNotebookQuery, '/api/editor/notebooks/query')
 
 # creation of logging file
 logging.basicConfig(filename='user_actions.log', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -152,7 +160,8 @@ def create():
     if not user_info['is_authenticated']:
         return redirect(url_for('login', next=request.path))
     notebook_id = create_notebook(user_info['user_id'])
-    return render_template('edit.html', notebook_id=notebook_id, **user_info)
+    editor_nonce = create_editor_launch(user_info['user_id'])
+    return render_template('edit.html', notebook_id=notebook_id, editor_nonce=editor_nonce, **user_info)
 
 @app.route('/create_fromtemplate/<slugid>')
 def create_fromtemplate(slugid):
@@ -169,7 +178,8 @@ def create_fromtemplate(slugid):
     if 'message' in notebook and notebook['message'] == 'not_authorized':
         flash('You are not authorized to access this notebook.')
         return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
-    return render_template('edit.html', notebook_id=notebook_id, **user_info)
+    editor_nonce = create_editor_launch(user_id)
+    return render_template('edit.html', notebook_id=notebook_id, editor_nonce=editor_nonce, **user_info)
 
 
 @app.route('/logout', methods=['GET', 'POST'])
@@ -232,7 +242,10 @@ def edit_notebook(identifier):
     user_info = get_user_info_from_token()
     if not user_info['is_authenticated']:
         return redirect(url_for('login', next=request.path))
-    return render_template('edit.html', notebook_id=identifier, **user_info)
+    editor_nonce = create_editor_launch(user_info['user_id'])
+    return render_template(
+        'edit.html', notebook_id=identifier, editor_nonce=editor_nonce, **user_info
+    )
 
 JUPYTERLITE_PATH = app.config['JUPYTERLITE_PATH']
 

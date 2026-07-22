@@ -5,6 +5,7 @@
     <iframe
         data-editor-url="{{ url_for('jupyterlite') }}"
         data-document-id="{{ notebook_id|e }}"
+        data-editor-nonce="{{ editor_nonce|e }}"
         class="iframe-container"
         id="jupyterlite-iframe"
         title="ReasonReport notebook editor"

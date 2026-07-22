@@ -3,7 +3,7 @@ import { IDocumentManager } from '@jupyterlab/docmanager';
 import { INotebookTracker } from '@jupyterlab/notebook';
 
 type ParentCommand =
-  | { msgtype: 'create'; documentId: string }
+  | { msgtype: 'create'; documentId: string; editorNonce: string }
   | { msgtype: 'publish'; documentId: string; requestId?: string };
 
 interface BridgeResponse {
@@ -39,10 +39,13 @@ function isCommand(value: unknown): value is ParentCommand {
     return false;
   }
   const command = value as Record<string, unknown>;
+  const validType = command.msgtype === 'create' || command.msgtype === 'publish';
+  const validNonce = command.msgtype !== 'create' || typeof command.editorNonce === 'string';
   return (
     command.source === SOURCE &&
     typeof command.documentId === 'string' &&
-    (command.msgtype === 'create' || command.msgtype === 'publish')
+    validType &&
+    validNonce
   );
 }
 
@@ -61,6 +64,34 @@ async function requestJSON(url: string, init: RequestInit = {}): Promise<any> {
     throw new Error(payload.message || `ReasonReport request failed (${response.status})`);
   }
   return payload;
+}
+
+async function provisionPythonClient(
+  documentManager: IDocumentManager,
+  editorNonce: string
+): Promise<void> {
+  const session = await requestJSON('/api/editor/session', {
+    method: 'POST',
+    headers: { 'X-ReasonReport-Editor': 'jupyterlite' },
+    body: JSON.stringify({ launch_nonce: editorNonce })
+  });
+  const moduleResponse = await fetch('/static/python/reasonreport.py', {
+    credentials: 'include'
+  });
+  if (!moduleResponse.ok) {
+    throw new Error('ReasonReport Python client could not be loaded.');
+  }
+  const contents = documentManager.services.contents;
+  await contents.save('reasonreport.py', {
+    type: 'file',
+    format: 'text',
+    content: await moduleResponse.text()
+  });
+  await contents.save('.reasonreport-session.json', {
+    type: 'file',
+    format: 'text',
+    content: JSON.stringify(session)
+  });
 }
 
 async function openNotebook(
@@ -127,7 +158,7 @@ const plugin: JupyterFrontEndPlugin<void> = {
     documentManager: IDocumentManager,
     tracker: INotebookTracker
   ): void => {
-    void app.restored.then(() => {
+    void app.restored.then(async () => {
       window.addEventListener('message', event => {
         if (
           event.source !== window.parent ||
@@ -140,7 +171,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
         const command = event.data;
         const operation =
           command.msgtype === 'create'
-            ? openNotebook(command.documentId, documentManager)
+            ? provisionPythonClient(documentManager, command.editorNonce).then(() =>
+                openNotebook(command.documentId, documentManager)
+              )
             : publishNotebook(command.documentId, command.requestId, tracker);
 
         void operation.catch(error => {

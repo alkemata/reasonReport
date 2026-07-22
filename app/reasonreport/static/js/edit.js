@@ -8,11 +8,12 @@
 
     const documentId = iframe.dataset.documentId;
     const editorUrl = iframe.dataset.editorUrl;
+    const editorNonce = iframe.dataset.editorNonce;
     const expectedOrigin = window.location.origin;
     let editorReady = false;
     let publishing = false;
 
-    if (!documentId || !editorUrl) {
+    if (!documentId || !editorUrl || !editorNonce) {
         window.alert('The notebook editor configuration is incomplete.');
         return;
     }
@@ -85,7 +86,7 @@
         const message = event.data;
         if (message.msgtype === 'ready') {
             installEditorButtons();
-            send({ msgtype: 'create', documentId });
+            send({ msgtype: 'create', documentId, editorNonce });
         } else if (message.msgtype === 'loaded') {
             editorReady = true;
         } else if (message.msgtype === 'publish-result') {
