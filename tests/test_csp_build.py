@@ -1,7 +1,10 @@
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path('app/reasonreport').resolve()))
+from config import PYODIDE_CDN, allow_pyodide  # noqa: E402
 from scripts.externalize_inline_scripts import externalize
 
 
@@ -26,7 +29,7 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
             self.assertIn('src="./csp-inline-2.js"', updated)
             self.assertIn("script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'", updated)
             self.assertIn("style-src 'self' 'unsafe-inline'", updated)
-            self.assertIn('https://cdn.jsdelivr.net/pyodide/', updated)
+            self.assertIn(PYODIDE_CDN, updated)
             self.assertNotIn("content=\"default-src 'self' data:\"", updated)
             self.assertEqual(
                 Path(directory, "csp-inline-1.js").read_text(encoding="utf-8"),
@@ -40,6 +43,17 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
             self.assertNotIn("<style", content, name)
             self.assertNotIn("onclick=", content, name)
         self.assertNotIn("<script>", templates.joinpath("edit.html").read_text())
+
+    def test_pyodide_is_allowed_when_deployment_overrides_csp(self):
+        policy = allow_pyodide(
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; "
+            "connect-src 'self'"
+        )
+
+        self.assertIn(f"script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' {PYODIDE_CDN}", policy)
+        self.assertIn(f"connect-src 'self' {PYODIDE_CDN}", policy)
+        self.assertEqual(policy.count(PYODIDE_CDN), 2)
 
 
 if __name__ == "__main__":
