@@ -137,6 +137,32 @@ The build also seeds the JupyterLite contents service from
 downloads Pyodide 0.27.6 while building the image and serves the runtime from
 `/jupyterlite/static/pyodide/`. Browsers therefore do not need to connect to an
 external CDN, and a `default-src 'self'` network policy remains sufficient.
+The pure-Python `comm` dependency is also downloaded at image-build time and
+added to JupyterLite's local piplite index. Kernel startup therefore does not
+query `https://pypi.org/simple/comm/` from the browser.
+
+### Why CSP errors appear one resource at a time
+
+Content Security Policy is an allowlist enforced by the browser. `script-src`
+controls executable scripts, while `connect-src` controls `fetch`, XHR, and
+similar network requests. When a directive is absent, the browser falls back
+to `default-src`. A policy such as `default-src 'self' data:` therefore denies
+every HTTPS origin other than the site that served the page.
+
+JupyterLite runs Python in the browser. Its Pyodide kernel may fetch both the
+Python runtime and missing Python wheels, so fixing one external request can
+reveal the next one. ReasonReport avoids that sequence by bundling both the
+Pyodide runtime and required startup wheels into the image. Packages installed
+interactively by notebook code still need either a wheel included in the local
+piplite index or an explicitly permitted package host.
+
+CSP can be supplied by an HTTP response header, an HTML meta element, and a
+reverse proxy. Browsers enforce all policies at once; a permissive Flask header
+cannot weaken a stricter Traefik header or meta policy. JupyterLite also uses a
+service worker, so old application configuration can remain cached after a
+deployment. Inspect every `Content-Security-Policy` response header and the
+page's meta policy, then unregister the old service worker or clear site data
+after replacing the container.
 
 ## 7. Start and verify MongoDB
 
