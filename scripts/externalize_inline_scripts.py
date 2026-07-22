@@ -17,7 +17,8 @@ JUPYTERLITE_CSP = (
     "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; "
     "style-src 'self' 'unsafe-inline'; "
     "worker-src 'self' blob:; "
-    "connect-src 'self'; frame-src 'self'; "
+    "connect-src 'self' https://pypi.org https://files.pythonhosted.org; "
+    "frame-src 'self'; "
     "img-src 'self' data: blob:; font-src 'self' data:"
 )
 NON_EXECUTABLE_TYPES = {

@@ -136,10 +136,13 @@ The build also seeds the JupyterLite contents service from
 `jupyterlite-content/` and verifies that `api/contents/all.json` exists. It
 downloads Pyodide 0.27.6 while building the image and serves the runtime from
 `/jupyterlite/static/pyodide/`. Browsers therefore do not need to connect to an
-external CDN, and a `default-src 'self'` network policy remains sufficient.
+external CDN for the Python runtime.
 The pure-Python `comm` dependency is also downloaded at image-build time and
-added to JupyterLite's local piplite index. Kernel startup therefore does not
-query `https://pypi.org/simple/comm/` from the browser.
+added to JupyterLite's local piplite index. The piplite/micropip resolver can
+still consult PyPI while resolving dependencies, so `connect-src` permits
+`https://pypi.org` and wheel downloads from `https://files.pythonhosted.org`.
+These are connection sources rather than script sources: wheels are package
+data interpreted inside Pyodide, not JavaScript executed by the browser.
 
 ### Why CSP errors appear one resource at a time
 
@@ -151,10 +154,10 @@ every HTTPS origin other than the site that served the page.
 
 JupyterLite runs Python in the browser. Its Pyodide kernel may fetch both the
 Python runtime and missing Python wheels, so fixing one external request can
-reveal the next one. ReasonReport avoids that sequence by bundling both the
-Pyodide runtime and required startup wheels into the image. Packages installed
-interactively by notebook code still need either a wheel included in the local
-piplite index or an explicitly permitted package host.
+reveal the next one. ReasonReport reduces that sequence by bundling both the
+Pyodide runtime and required startup wheels into the image. The PyPI origins
+remain explicitly allowed for dependency resolution and packages installed
+interactively by notebook code.
 
 CSP can be supplied by an HTTP response header, an HTML meta element, and a
 reverse proxy. Browsers enforce all policies at once; a permissive Flask header
