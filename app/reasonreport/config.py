@@ -1,5 +1,6 @@
 import os
 
+
 class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'development-flask-key-change-me-32')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'development-jwt-key-change-me-32')
@@ -12,10 +13,10 @@ class Config:
     CONTENT_SECURITY_POLICY = os.environ.get(
         'CONTENT_SECURITY_POLICY',
         "default-src 'self' data: blob:; "
-        "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/; "
+        "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval'; "
         "style-src 'self' 'unsafe-inline'; "
         "worker-src 'self' blob:; "
-        "connect-src 'self' https://cdn.jsdelivr.net/pyodide/; "
+        "connect-src 'self'; "
         "frame-src 'self'; "
         "img-src 'self' data: blob:; "
         "font-src 'self' data:"

@@ -133,9 +133,10 @@ runs `jupyter lite build`. Internet access to PyPI and the Yarn/npm registries i
 therefore required during this step.
 
 The build also seeds the JupyterLite contents service from
-`jupyterlite-content/` and verifies that `api/contents/all.json` exists. The
-Pyodide kernel currently loads its pinned runtime from jsDelivr, so production
-clients must be able to reach `https://cdn.jsdelivr.net/pyodide/`.
+`jupyterlite-content/` and verifies that `api/contents/all.json` exists. It
+downloads Pyodide 0.27.6 while building the image and serves the runtime from
+`/jupyterlite/static/pyodide/`. Browsers therefore do not need to connect to an
+external CDN, and a `default-src 'self'` network policy remains sufficient.
 
 ## 7. Start and verify MongoDB
 

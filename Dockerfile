@@ -19,8 +19,11 @@ RUN extension_dir="$(python -c 'import sysconfig; print(sysconfig.get_path("data
 COPY jupyterlite-content /build/jupyterlite-content
 RUN jupyter lite build \
     --contents=/build/jupyterlite-content \
+    --pyodide=https://github.com/pyodide/pyodide/releases/download/0.27.6/pyodide-0.27.6.tar.bz2 \
     --output-dir=/opt/jupyterlite \
-    && test -f /opt/jupyterlite/api/contents/all.json
+    && test -f /opt/jupyterlite/api/contents/all.json \
+    && test -f /opt/jupyterlite/static/pyodide/pyodide.js \
+    && grep -q '"pyodideUrl": "./static/pyodide/pyodide.js"' /opt/jupyterlite/jupyter-lite.json
 COPY scripts/externalize_inline_scripts.py /usr/local/bin/externalize-inline-scripts
 RUN externalize-inline-scripts /opt/jupyterlite
 
