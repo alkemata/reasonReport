@@ -14,10 +14,10 @@ SCRIPT_RE = re.compile(
 META_RE = re.compile(r"<meta\b[^>]*>", re.IGNORECASE | re.DOTALL)
 JUPYTERLITE_CSP = (
     "default-src 'self' data: blob:; "
-    "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net/pyodide/; "
+    "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; "
     "style-src 'self' 'unsafe-inline'; "
     "worker-src 'self' blob:; "
-    "connect-src 'self' https://cdn.jsdelivr.net/pyodide/; frame-src 'self'; "
+    "connect-src 'self' https://cdn.jsdelivr.net; frame-src 'self'; "
     "img-src 'self' data: blob:; font-src 'self' data:"
 )
 NON_EXECUTABLE_TYPES = {
