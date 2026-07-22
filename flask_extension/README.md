@@ -4,6 +4,17 @@
 
 A JupyterLab extension.for flask
 
+This prebuilt extension is the browser-side bridge between ReasonReport and the
+JupyterLite editor embedded by Flask. It announces when JupyterLite is ready,
+loads an existing or blank notebook from the authenticated Flask API, opens it
+in the notebook editor, and publishes the active notebook through the create or
+save API.
+
+Messages are accepted only from the embedding page's origin and window. Parent
+commands include `source: "reasonreport-parent"`; extension responses use
+`source: "reasonreport-jupyterlite"`. The supported commands are `create` and
+`publish`, as implemented in `src/index.ts`.
+
 ## Requirements
 
 - JupyterLab >= 4.0.0
