@@ -17,10 +17,19 @@ RUN extension_dir="$(python -c 'import sysconfig; print(sysconfig.get_path("data
     && mkdir -p "$extension_dir" \
     && cp -a jupyter_flask_extension_py/labextension/. "$extension_dir/"
 COPY jupyterlite-content /build/jupyterlite-content
+RUN mkdir -p /build/piplite-wheels \
+    && pip download --no-deps --only-binary=:all: \
+        --dest=/build/piplite-wheels comm==0.2.2
 RUN jupyter lite build \
     --contents=/build/jupyterlite-content \
+    --pyodide=https://github.com/pyodide/pyodide/releases/download/0.27.6/pyodide-0.27.6.tar.bz2 \
+    --piplite-wheels=/build/piplite-wheels \
     --output-dir=/opt/jupyterlite \
-    && test -f /opt/jupyterlite/api/contents/all.json
+    && test -f /opt/jupyterlite/api/contents/all.json \
+    && test -f /opt/jupyterlite/static/pyodide/pyodide.js \
+    && test -f /opt/jupyterlite/api/pypi/all.json \
+    && grep -q 'comm-0.2.2-py3-none-any.whl' /opt/jupyterlite/api/pypi/all.json \
+    && grep -q '"pyodideUrl": "./static/pyodide/pyodide.js"' /opt/jupyterlite/jupyter-lite.json
 COPY scripts/externalize_inline_scripts.py /usr/local/bin/externalize-inline-scripts
 RUN externalize-inline-scripts /opt/jupyterlite
 
