@@ -90,7 +90,11 @@
         } else if (message.msgtype === 'loaded') {
             editorReady = true;
         } else if (message.msgtype === 'publish-result') {
-            window.location.assign(`/id/${encodeURIComponent(message.documentId)}`);
+            if (!message.slug) {
+                window.alert('The published page did not return a valid slug.');
+                return;
+            }
+            window.location.assign(`/slug/${encodeURIComponent(message.slug)}`);
         } else if (message.msgtype === 'error') {
             publishing = false;
             const publishButton = document.getElementById('publish-button');

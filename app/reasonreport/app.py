@@ -165,7 +165,7 @@ def register():
         user_id = create_user(username, password)
         if user_id:
             # Create a notebook and authenticate the new user immediately.
-            notebook_id = create_notebook(user_id)
+            notebook_id = create_notebook(user_id, username)
             token = generate_token(user_id)
             response = redirect(url_for('edit_notebook', identifier=notebook_id))
             set_auth_cookie(response, token)
@@ -181,7 +181,7 @@ def create():
     user_info = get_user_info_from_token()
     if not user_info['is_authenticated']:
         return redirect(url_for('login', next=request.path))
-    notebook_id = create_notebook(user_info['user_id'])
+    notebook_id = create_notebook(user_info['user_id'], user_info['username'])
     editor_nonce = create_editor_launch(user_info['user_id'])
     return render_template('edit.html', notebook_id=notebook_id, editor_nonce=editor_nonce, **user_info)
 
