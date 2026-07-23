@@ -58,6 +58,12 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
             self.assertNotIn("onclick=", content, name)
         self.assertNotIn("<script>", templates.joinpath("edit.html").read_text())
 
+    def test_header_uses_green_palette(self):
+        styles = Path('app/reasonreport/static/css/styles.css').read_text()
+
+        self.assertIn('background-color: #dff3e4', styles)
+        self.assertIn('color: #176b3a', styles)
+
     def test_missing_contents_manifest_returns_empty_drive(self):
         import app as reasonreport_app
 

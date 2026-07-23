@@ -1,7 +1,8 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path('app/reasonreport').resolve()))
 import app as reasonreport_app  # noqa: E402
@@ -43,7 +44,37 @@ class AuthenticationCookieTest(unittest.TestCase):
     def test_login_form_preserves_requested_destination(self):
         response = self.client.get('/login?next=/create')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'action="/login?next=/create"', response.data)
+        self.assertIn(b'action="/login"', response.data)
+        self.assertIn(b'name="next" value="/create"', response.data)
+
+    def test_login_uses_same_origin_referrer_when_next_is_absent(self):
+        response = self.client.get(
+            '/login', headers={'Referer': 'http://localhost/slug/article?view=full'}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            b'name="next" value="/slug/article?view=full"', response.data
+        )
+
+    def test_index_redirects_to_admin_mainpage(self):
+        admin = {'_id': 'admin-id', 'username': 'admin'}
+        notebooks = MagicMock()
+        notebooks.find_one.return_value = {'slug': 'mainpage', 'author': 'admin-id'}
+        with (
+            patch.object(reasonreport_app, 'get_user_by_username', return_value=admin),
+            patch.object(
+                reasonreport_app,
+                'mongo',
+                SimpleNamespace(db=SimpleNamespace(notebooks=notebooks)),
+            ),
+        ):
+            response = self.client.get('/')
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.location, '/slug/mainpage')
+        notebooks.find_one.assert_called_once_with(
+            {'slug': 'mainpage', 'author': 'admin-id'}
+        )
 
     def test_editor_redirects_anonymous_user_to_login(self):
         response = self.client.get('/edit/notebook-id')
