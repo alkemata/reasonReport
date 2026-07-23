@@ -1,4 +1,7 @@
 # app.py
+import os
+from urllib.parse import urlsplit
+
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response, flash
 from flask_restful import Api, Resource
 from config import Config
@@ -82,30 +85,49 @@ def get_user_info_from_token():
 
 # Frontend Routes
 
+
+def safe_local_url(candidate, fallback='/'):
+    """Return a local redirect target without permitting an open redirect."""
+    if not candidate:
+        return fallback
+    parsed = urlsplit(candidate)
+    if parsed.scheme or parsed.netloc:
+        request_origin = urlsplit(request.host_url)
+        if (parsed.scheme, parsed.netloc) != (request_origin.scheme, request_origin.netloc):
+            return fallback
+    path = parsed.path or '/'
+    if not path.startswith('/') or path.startswith('//'):
+        return fallback
+    return path + (f'?{parsed.query}' if parsed.query else '')
+
+
+def login_return_url():
+    requested = request.form.get('next') or request.args.get('next')
+    if requested:
+        return safe_local_url(requested)
+    return safe_local_url(request.referrer, url_for('index'))
+
 @app.route('/')
 def index():
-    user_info = get_user_info_from_token()
-
-    notebook = None
-    is_author = False
-
-    if user_info['is_authenticated']:
-        # Attempt to get notebook by user's slug (username)
-        notebook = mongo.db.notebooks.find_one({'slug': user_info['username']})
-        if notebook:
-            notebook['_id'] = str(notebook['_id'])
-            is_author = True
-            return render_template('index.html', notebook=notebook_html(notebook), id=notebook['_id'],is_author=is_author, **user_info)
-        else:
-            return render_template('error.html',error="No personal page",is_author=is_author,**user_info)
-    return render_template('error.html',error="Not authenticated",is_author=is_author,**user_info)
+    admin = get_user_by_username('admin')
+    if not admin:
+        user_info = get_user_info_from_token()
+        return render_template(
+            'error.html', error='Admin main page not found', is_author=False, **user_info
+        ), 404
+    query = {'slug': 'mainpage', 'author': str(admin['_id'])}
+    notebook = mongo.db.notebooks.find_one(query)
+    if not notebook:
+        user_info = get_user_info_from_token()
+        return render_template(
+            'error.html', error='Main page not found', is_author=False, **user_info
+        ), 404
+    return redirect(url_for('notebook', slug='mainpage'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    next_page = request.args.get('next') or url_for('index')
-    if not next_page.startswith('/') or next_page.startswith('//'):
-        next_page = url_for('index')
+    next_page = login_return_url()
     if request.method == 'GET' and get_user_info_from_token()['is_authenticated']:
         return redirect(next_page)
     if request.method == 'POST':
@@ -119,7 +141,7 @@ def login():
             return response
         else:
             flash("Invalid credentials, please try again.")
-    return render_template('login.html')
+    return render_template('login.html', next_page=next_page)
 
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
@@ -143,7 +165,7 @@ def register():
         user_id = create_user(username, password)
         if user_id:
             # Create a notebook and authenticate the new user immediately.
-            notebook_id = create_notebook(user_id)
+            notebook_id = create_notebook(user_id, username)
             token = generate_token(user_id)
             response = redirect(url_for('edit_notebook', identifier=notebook_id))
             set_auth_cookie(response, token)
@@ -159,7 +181,7 @@ def create():
     user_info = get_user_info_from_token()
     if not user_info['is_authenticated']:
         return redirect(url_for('login', next=request.path))
-    notebook_id = create_notebook(user_info['user_id'])
+    notebook_id = create_notebook(user_info['user_id'], user_info['username'])
     editor_nonce = create_editor_launch(user_info['user_id'])
     return render_template('edit.html', notebook_id=notebook_id, editor_nonce=editor_nonce, **user_info)
 
@@ -248,6 +270,32 @@ def edit_notebook(identifier):
     )
 
 JUPYTERLITE_PATH = app.config['JUPYTERLITE_PATH']
+
+
+@app.route('/jupyterlite/api/contents/all.json')
+def serve_jupyterlite_contents_manifest():
+    """Serve a valid root drive even when an older Lite build omitted it."""
+    manifest = os.path.join(JUPYTERLITE_PATH, 'api', 'contents', 'all.json')
+    if os.path.isfile(manifest):
+        return send_from_directory(os.path.dirname(manifest), 'all.json')
+
+    app.logger.warning(
+        'JupyterLite contents manifest is missing at %s; serving an empty drive',
+        manifest,
+    )
+    response = jsonify({
+        'content': [],
+        'format': 'json',
+        'mimetype': None,
+        'name': '',
+        'path': '',
+        'size': None,
+        'type': 'directory',
+        'writable': True,
+    })
+    response.headers['X-ReasonReport-JupyterLite-Fallback'] = 'empty-contents'
+    return response
+
 
 # Route to serve JupyterLite static files
 @app.route('/jupyterlite/<path:filename>')
