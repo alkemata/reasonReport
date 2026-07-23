@@ -166,3 +166,30 @@ class EditorNotebookQuery(Resource):
         limit = min(max(limit, 1), 100)
         documents = mongo.db.notebooks.find({'$and': [query, _access_filter(request.user['id'])]}).sort('date', -1).limit(limit)
         return {'documents': [_summary(document) for document in documents]}, 200
+
+
+class EditorAdminOverview(Resource):
+    @token_required
+    @editor_session_required
+    def get(self):
+        if request.user.get('username') != 'admin':
+            return {'message': 'Administrator access required'}, 403
+
+        documents = list(mongo.db.notebooks.find({}).sort('date', -1).limit(10))
+        author_ids = {document.get('author') for document in documents}
+        author_ids.discard(None)
+        authors = {
+            str(user['_id']): user.get('username', 'Unknown')
+            for user in mongo.db.users.find({'_id': {'$in': [
+                ObjectId(author_id) for author_id in author_ids
+                if ObjectId.is_valid(str(author_id))
+            ]}})
+        }
+        return {
+            'user_count': mongo.db.users.count_documents({}),
+            'documents': [{
+                'title': document.get('title', ''),
+                'slug': document.get('slug', ''),
+                'author': authors.get(str(document.get('author')), 'Unknown'),
+            } for document in documents],
+        }, 200

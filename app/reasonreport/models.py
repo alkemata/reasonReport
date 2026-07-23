@@ -55,8 +55,11 @@ def delete_user(user_id):
 
 
 # Notebook Operations
-def create_notebook(author_id):
-    nb = create_notebook_content(author_id)
+DEFAULT_TITLE = "Please enter the title here"
+
+
+def create_notebook(author_id, author_name=None):
+    nb = create_notebook_content(author_id, author_name)
     notebook = {
         'notebook': nb,
         'author': author_id,
@@ -69,7 +72,10 @@ def create_notebook(author_id):
     return str(result.inserted_id)
 
 
-def create_notebook_content(author_id):
+def create_notebook_content(author_id, author_name=None):
+    if not author_name:
+        author = get_user_by_id(author_id)
+        author_name = author['username'] if author else str(author_id)
     nb = nbformat.v4.new_notebook()
     
     # Pre-processing: Add three cells with tags author, date, and title
@@ -77,7 +83,7 @@ def create_notebook_content(author_id):
     
     # Author Cell
     cells.append(nbformat.v4.new_markdown_cell("Author:"))
-    cells.append(nbformat.v4.new_markdown_cell(f"{author_id}"))
+    cells.append(nbformat.v4.new_markdown_cell(author_name))
     cells[-1].metadata['type']="author"
     
     # Date Cell
@@ -97,27 +103,27 @@ def create_notebook_content(author_id):
     
     return nb
 
-def create_new_notebook(author_id, notebook_json):
-    notebook = build_notebook_document(author_id, notebook_json)
+def create_new_notebook(author_id, author_name, notebook_json):
+    notebook = build_notebook_document(author_id, author_name, notebook_json)
     result = mongo.db.notebooks.insert_one(notebook)
-    return str(result.inserted_id)
+    return str(result.inserted_id), notebook['slug']
 
-def save_notebook(notebook_id, author_id, notebook_json):
+def save_notebook(notebook_id, author_id, author_name, notebook_json):
     existing = mongo.db.notebooks.find_one({'_id': ObjectId(notebook_id)})
     if not existing:
         return "not_found"
     update_fields = build_notebook_document(
         author_id,
+        author_name,
         notebook_json,
-        existing_slug=existing.get('slug'),
         notebook_id=notebook_id,
         created_at=existing.get('date')
     )
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
-    return 'ok'
+    return update_fields['slug']
 
 
-def build_notebook_document(author_id, notebook_json, existing_slug=None,
+def build_notebook_document(author_id, author_name, notebook_json,
                             notebook_id=None, created_at=None):
     """Validate notebook JSON and derive safe server-side publication fields."""
     raw_notebook = notebook_json.get('notebook', notebook_json)
@@ -130,18 +136,33 @@ def build_notebook_document(author_id, notebook_json, existing_slug=None,
     if metadata == "error":
         raise ValueError("Notebook requires non-empty title and date metadata cells")
 
-    initial_slug = slugify(metadata['title'])
+    title = metadata['title'].strip().strip('#').strip()
+    if title.casefold() == DEFAULT_TITLE.casefold():
+        raise ValueError(f'Title must be different from "{DEFAULT_TITLE}"')
+    initial_slug = slugify(title)
     if not initial_slug:
         raise ValueError("Notebook title must produce a valid slug")
-    slug = existing_slug or ensure_unique_slug(initial_slug, notebook_id)
+    slug = ensure_unique_slug(initial_slug, notebook_id)
+    set_author_cell(nb, author_name)
     return {
         'notebook': nb,
         'author': str(author_id),
         'slug': slug,
-        'title': metadata['title'],
+        'title': title,
         'date': created_at or datetime.utcnow(),
         'is_public': True
     }
+
+
+def set_author_cell(notebook, author_name):
+    """Set the visible author metadata cell from the authenticated user."""
+    for cell in notebook.cells:
+        if cell.metadata.get('type') == 'author':
+            cell.source = author_name
+            return
+    notebook.cells.insert(
+        0, nbformat.v4.new_markdown_cell(author_name, metadata={'type': 'author'})
+    )
 
 def get_notebook(query, user_id):
     if isinstance(query, str) and ObjectId.is_valid(query):

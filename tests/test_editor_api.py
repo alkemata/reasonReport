@@ -23,10 +23,12 @@ class EditorApiSecurityTest(unittest.TestCase):
         self.launches.find_one_and_delete.return_value = None
         self.sessions.find_one.return_value = None
         self.notebooks = MagicMock()
+        self.users = MagicMock()
         self.database = SimpleNamespace(
             editor_sessions=self.sessions,
             editor_launches=self.launches,
             notebooks=self.notebooks,
+            users=self.users,
         )
         self.mongo_patch = patch.object(editor_api, 'mongo', SimpleNamespace(db=self.database))
         self.user_patch = patch.object(utils, 'get_user_by_id', return_value=self.user)
@@ -96,6 +98,39 @@ class EditorApiSecurityTest(unittest.TestCase):
         query = self.sessions.find_one.call_args.args[0]
         self.assertEqual(query['user_id'], 'user-id')
         self.assertIn('expires_at', query)
+
+    def test_admin_overview_is_restricted_to_admin(self):
+        self.sessions.find_one.return_value = {'user_id': 'user-id'}
+        response = self.client.get('/api/editor/admin/overview', headers=self.headers())
+
+        self.assertEqual(response.status_code, 403)
+        self.notebooks.find.assert_not_called()
+
+    def test_admin_overview_returns_user_and_document_summary(self):
+        self.user['username'] = 'admin'
+        self.sessions.find_one.return_value = {'user_id': 'user-id'}
+        cursor = MagicMock()
+        cursor.sort.return_value.limit.return_value.__iter__.return_value = iter([{
+            'title': 'Recent page',
+            'slug': 'recent-page',
+            'author': '507f1f77bcf86cd799439011',
+        }])
+        self.notebooks.find.return_value = cursor
+        self.users.find.return_value = [{
+            '_id': '507f1f77bcf86cd799439011',
+            'username': 'Alice',
+        }]
+        self.users.count_documents.return_value = 7
+
+        response = self.client.get('/api/editor/admin/overview', headers=self.headers())
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json['user_count'], 7)
+        self.assertEqual(response.json['documents'], [{
+            'title': 'Recent page',
+            'slug': 'recent-page',
+            'author': 'Alice',
+        }])
 
 
 if __name__ == '__main__':
