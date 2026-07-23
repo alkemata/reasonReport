@@ -11,7 +11,8 @@ from resources import (
     NotebookCreate, NotebookSave, NotebookQuery, NotebookDelete, authenticate_user
 )
 from editor_api import (
-    EditorNotebookList, EditorNotebookQuery, EditorNotebookRead, EditorSession,
+    EditorAdminOverview, EditorNotebookList, EditorNotebookQuery,
+    EditorNotebookRead, EditorSession,
     create_editor_launch
 )
 from utils import clear_auth_cookie, decode_token, generate_token, set_auth_cookie
@@ -57,6 +58,7 @@ api.add_resource(EditorSession, '/api/editor/session')
 api.add_resource(EditorNotebookList, '/api/editor/notebooks')
 api.add_resource(EditorNotebookRead, '/api/editor/notebooks/<string:notebook_id>')
 api.add_resource(EditorNotebookQuery, '/api/editor/notebooks/query')
+api.add_resource(EditorAdminOverview, '/api/editor/admin/overview')
 
 # creation of logging file
 logging.basicConfig(filename='user_actions.log', level=logging.INFO, format='%(asctime)s - %(message)s')

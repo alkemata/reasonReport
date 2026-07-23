@@ -190,7 +190,10 @@ class NotebookQuery(Resource):
             return {'message': 'Unauthorized access to this notebook'}, 403
         
         notebook['_id'] = str(notebook['_id'])
-        return {'notebook': notebook['notebook']}, 200
+        return {
+            'notebook': notebook['notebook'],
+            'slug': notebook.get('slug', ''),
+        }, 200
 
 class NotebookDelete(Resource):
     @token_required

@@ -68,10 +68,11 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         editor_script = Path('app/reasonreport/static/js/edit.js').read_text()
 
         self.assertIn('function finishPublishing()', editor_script)
+        self.assertIn('async function publishedSlug(message)', editor_script)
         publish_result = editor_script.index(
             "message.msgtype === 'publish-result'"
         )
-        missing_slug = editor_script.index('if (!message.slug)', publish_result)
+        missing_slug = editor_script.index('if (!slug)', publish_result)
         reset = editor_script.index('finishPublishing();', publish_result)
         self.assertLess(reset, missing_slug)
 
