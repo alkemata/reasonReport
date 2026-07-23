@@ -35,6 +35,15 @@
         return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
 
+    function finishPublishing() {
+        publishing = false;
+        const publishButton = document.getElementById('publish-button');
+        if (publishButton) {
+            publishButton.disabled = false;
+            publishButton.textContent = 'Publish';
+        }
+    }
+
     function installEditorButtons() {
         const createControl = document.querySelector('.dropdown');
         if (createControl) {
@@ -90,18 +99,14 @@
         } else if (message.msgtype === 'loaded') {
             editorReady = true;
         } else if (message.msgtype === 'publish-result') {
+            finishPublishing();
             if (!message.slug) {
                 window.alert('The published page did not return a valid slug.');
                 return;
             }
             window.location.assign(`/slug/${encodeURIComponent(message.slug)}`);
         } else if (message.msgtype === 'error') {
-            publishing = false;
-            const publishButton = document.getElementById('publish-button');
-            if (publishButton) {
-                publishButton.disabled = false;
-                publishButton.textContent = 'Publish';
-            }
+            finishPublishing();
             window.alert(message.message || 'The notebook operation failed.');
         }
     });

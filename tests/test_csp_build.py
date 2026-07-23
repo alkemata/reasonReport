@@ -64,6 +64,17 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         self.assertIn('background-color: #dff3e4', styles)
         self.assertIn('color: #176b3a', styles)
 
+    def test_publish_errors_reenable_publish_button(self):
+        editor_script = Path('app/reasonreport/static/js/edit.js').read_text()
+
+        self.assertIn('function finishPublishing()', editor_script)
+        publish_result = editor_script.index(
+            "message.msgtype === 'publish-result'"
+        )
+        missing_slug = editor_script.index('if (!message.slug)', publish_result)
+        reset = editor_script.index('finishPublishing();', publish_result)
+        self.assertLess(reset, missing_slug)
+
     def test_missing_contents_manifest_returns_empty_drive(self):
         import app as reasonreport_app
 
