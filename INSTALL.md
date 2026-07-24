@@ -198,6 +198,36 @@ docker compose logs -f flaskapprr
 The Flask service listens on port 5000 inside the Docker networks. Traefik
 forwards the public HTTPS hostname to that internal port.
 
+### Development hot reload
+
+For local development, start Compose with the development override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up flaskapprr
+```
+
+The override enables Flask's debugger/reloader, so changes under `app/` are
+picked up without restarting the container. It also watches
+`flask_extension/src/`; after a TypeScript change it rebuilds the federated
+extension and JupyterLite site automatically. Wait for the
+`JupyterLite extension rebuild complete` log message, then reload the editor
+page. A JupyterLite service worker may retain the prior build, so use a hard
+reload or clear the site's service worker/cache if the new extension does not
+appear.
+
+If `git pull` only changes Flask application files, templates, static files, or
+extension source, the running development stack reloads them. Rebuild the image
+when the pull changes dependencies, the Dockerfile, build configuration, or
+system packages:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up \
+  --build flaskapprr
+```
+
+Do not use the development override in production: Flask debug mode permits
+interactive debugging, and the source watcher consumes extra resources.
+
 ## 9. Verify the HTTP endpoints
 
 Using the default hostname:

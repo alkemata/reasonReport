@@ -9,6 +9,16 @@ from scripts.externalize_inline_scripts import externalize
 
 
 class JupyterLiteCspBuildTest(unittest.TestCase):
+    def test_development_compose_enables_both_reloaders(self):
+        compose = Path('docker-compose.dev.yml').read_text()
+        script = Path('scripts/dev_server.sh').read_text()
+
+        self.assertIn('FLASK_DEBUG: "true"', compose)
+        self.assertIn('flask run --debug', script)
+        self.assertIn('/build/flask_extension/src', compose)
+        self.assertIn('npm run build:prod', script)
+        self.assertIn('jupyter lite build', script)
+
     def test_docker_build_bundles_pyodide_for_same_origin_loading(self):
         dockerfile = Path('Dockerfile').read_text(encoding='utf-8')
 
