@@ -4,11 +4,12 @@ import { INotebookTracker } from '@jupyterlab/notebook';
 
 type ParentCommand =
   | { msgtype: 'create'; documentId: string; editorNonce: string }
-  | { msgtype: 'publish'; documentId: string; requestId?: string };
+  | { msgtype: 'publish'; documentId: string; requestId?: string }
+  | { msgtype: 'cleanup'; documentId: string };
 
 interface BridgeResponse {
   source: 'reasonreport-jupyterlite';
-  msgtype: 'ready' | 'loaded' | 'publish-result' | 'error';
+  msgtype: 'ready' | 'loaded' | 'publish-result' | 'cleanup-result' | 'error';
   requestId?: string;
   documentId?: string;
   slug?: string;
@@ -40,7 +41,10 @@ function isCommand(value: unknown): value is ParentCommand {
     return false;
   }
   const command = value as Record<string, unknown>;
-  const validType = command.msgtype === 'create' || command.msgtype === 'publish';
+  const validType =
+    command.msgtype === 'create' ||
+    command.msgtype === 'publish' ||
+    command.msgtype === 'cleanup';
   const validNonce = command.msgtype !== 'create' || typeof command.editorNonce === 'string';
   return (
     command.source === SOURCE &&
@@ -117,10 +121,26 @@ async function openNotebook(
   });
 }
 
+async function clearEditorStorage(documentManager: IDocumentManager): Promise<void> {
+  await documentManager.closeAll();
+  const contents = documentManager.services.contents;
+  try {
+    const root = await contents.get('', { content: true });
+    const entries = Array.isArray(root.content) ? root.content : [];
+    for (const entry of entries) {
+      await contents.delete(entry.path);
+    }
+  } catch (error) {
+    console.warn('Could not clear the JupyterLite contents store.', error);
+  }
+  window.localStorage.clear();
+}
+
 async function publishNotebook(
   documentId: string,
   requestId: string | undefined,
-  tracker: INotebookTracker
+  tracker: INotebookTracker,
+  documentManager: IDocumentManager
 ): Promise<void> {
   const panel = tracker.currentWidget;
   if (!panel) {
@@ -146,6 +166,7 @@ async function publishNotebook(
       'The server did not return a valid page slug. Correct the page and publish again.'
     );
   }
+  await clearEditorStorage(documentManager);
   sendToParent({
     source: 'reasonreport-jupyterlite',
     msgtype: 'publish-result',
@@ -176,12 +197,27 @@ const plugin: JupyterFrontEndPlugin<void> = {
         }
 
         const command = event.data;
-        const operation =
-          command.msgtype === 'create'
-            ? provisionPythonClient(documentManager, command.editorNonce).then(() =>
-                openNotebook(command.documentId, documentManager)
-              )
-            : publishNotebook(command.documentId, command.requestId, tracker);
+        let operation: Promise<void>;
+        if (command.msgtype === 'create') {
+          operation = provisionPythonClient(documentManager, command.editorNonce).then(() =>
+            openNotebook(command.documentId, documentManager)
+          );
+        } else if (command.msgtype === 'publish') {
+          operation = publishNotebook(
+            command.documentId,
+            command.requestId,
+            tracker,
+            documentManager
+          );
+        } else {
+          operation = clearEditorStorage(documentManager).then(() => {
+            sendToParent({
+              source: 'reasonreport-jupyterlite',
+              msgtype: 'cleanup-result',
+              documentId: command.documentId
+            });
+          });
+        }
 
         void operation.catch(error => {
           sendToParent({

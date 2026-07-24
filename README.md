@@ -19,7 +19,7 @@ For an existing database, assign roles once after upgrading (adjust usernames
 as appropriate):
 
 ```bash
-docker compose exec mongo mongosh flaskdb --eval \
+docker-compose exec mongo mongosh flaskdb --eval \
   'db.users.updateMany({role: {$exists: false}}, {$set: {role: "user"}}); db.users.updateOne({username: "admin"}, {$set: {role: "admin"}})'
 ```
 
@@ -38,3 +38,9 @@ documents authored by that user.
 
 Use `list_documents.sh` to obtain a document's MongoDB `_id` before deleting
 it. These destructive commands cannot be undone, so back up the database first.
+
+MongoDB data is stored in the stable `reasonreport-mongo-data` Docker volume.
+Container rebuilds and `docker-compose down` do not remove it; avoid
+`docker-compose down -v` unless deleting the database is intentional. See
+[INSTALL.md](INSTALL.md#5-prepare-mongodb-storage) for migration and backup
+instructions.

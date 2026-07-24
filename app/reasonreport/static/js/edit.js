@@ -12,6 +12,7 @@
     const expectedOrigin = window.location.origin;
     let editorReady = false;
     let publishing = false;
+    let closing = false;
 
     if (!documentId || !editorUrl || !editorNonce) {
         window.alert('The notebook editor configuration is incomplete.');
@@ -94,7 +95,13 @@
         closeButton.id = 'quit-editing-button';
         closeButton.textContent = 'Close editor';
         closeButton.addEventListener('click', () => {
-            window.location.assign(documentId === '-1' ? '/' : `/id/${documentId}`);
+            if (!editorReady || publishing || closing) {
+                return;
+            }
+            closing = true;
+            closeButton.disabled = true;
+            closeButton.textContent = 'Closing…';
+            send({ msgtype: 'cleanup', documentId });
         });
 
         authButtons.append(publishButton, closeButton);
@@ -124,8 +131,16 @@
                 return;
             }
             window.location.assign(`/slug/${encodeURIComponent(slug)}`);
+        } else if (message.msgtype === 'cleanup-result') {
+            window.location.assign(documentId === '-1' ? '/' : `/id/${documentId}`);
         } else if (message.msgtype === 'error') {
             finishPublishing();
+            closing = false;
+            const closeButton = document.getElementById('quit-editing-button');
+            if (closeButton) {
+                closeButton.disabled = false;
+                closeButton.textContent = 'Close editor';
+            }
             window.alert(message.message || 'The notebook operation failed.');
         }
     });

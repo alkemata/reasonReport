@@ -9,7 +9,7 @@ services:
       - "27017:27017"
     volumes:
       - ./mongo-config:/etc/mongo-config
-      - ./mongo-data:/data/db:rw
+      - mongo-data:/data/db
       - ./mongo-logs:/var/log/mongodb:rw
     command: mongod --config /etc/mongo-config/mongod.conf
     networks:
@@ -47,4 +47,5 @@ networks:
 
 volumes:
   mongo-data:
+    name: reasonreport-mongo-data
     driver: local
