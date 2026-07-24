@@ -6,7 +6,8 @@ body {
 }
 
 header {
-    background-color: #333;
+    background-color: #dff3e4;
+    color: #176b3a;
     padding: 10px;
 }
 
@@ -17,12 +18,13 @@ header nav {
 }
 
 header nav a {
-    color: white;
+    color: #176b3a;
     text-decoration: none;
     margin-right: 15px;
 }
 
 header nav button {
+    color: #176b3a;
     margin-left: 10px;
     padding: 5px 10px;
 }
@@ -69,7 +71,7 @@ iframe {
     border: 2px outset buttonborder;
     border-radius: 2px;
     background: buttonface;
-    color: buttontext;
+    color: #176b3a;
     font: inherit;
     margin-left: 10px;
     padding: 5px 10px;
