@@ -10,9 +10,12 @@ from scripts.externalize_inline_scripts import externalize
 
 class JupyterLiteCspBuildTest(unittest.TestCase):
     def test_development_compose_enables_both_reloaders(self):
+        base_compose = Path('docker-compose.yml').read_text()
         compose = Path('docker-compose.dev.yml').read_text()
         script = Path('scripts/dev_server.sh').read_text()
 
+        self.assertIn("version: '3'", base_compose)
+        self.assertIn("version: '3'", compose)
         self.assertIn('FLASK_DEBUG: "true"', compose)
         self.assertIn('flask run --debug', script)
         self.assertIn('/build/flask_extension/src', compose)

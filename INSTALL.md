@@ -206,6 +206,10 @@ For local development, start Compose with the development override:
 docker compose -f docker-compose.yml -f docker-compose.dev.yml up flaskapprr
 ```
 
+Both Compose files declare the same Compose format version, so this command is
+also compatible with legacy `docker-compose` installations that otherwise
+interpret a versionless override as the old version 1 format.
+
 The override enables Flask's debugger/reloader, so changes under `app/` are
 picked up without restarting the container. It also watches
 `flask_extension/src/`; after a TypeScript change it rebuilds the federated

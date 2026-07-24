@@ -1,3 +1,5 @@
+version: '3'
+
 services:
   flaskapprr:
     command: /bin/sh /usr/local/bin/reasonreport-dev
