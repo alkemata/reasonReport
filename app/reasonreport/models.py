@@ -9,25 +9,31 @@ from datetime import datetime
 import json
 
 mongo = PyMongo()
+USER_ROLES = frozenset({'admin', 'editor', 'user'})
 
 # User Operations
-def create_user(username, password, landing_page=None, additional_fields=None):
+def create_user(username, password, landing_page=None, role='user', additional_fields=None):
     username = username.strip()
     if len(username) < 3:
         raise ValueError('Username must be at least 3 characters')
     if len(password) < 8:
         raise ValueError('Password must be at least 8 characters')
+    if role not in USER_ROLES:
+        raise ValueError(f"Role must be one of: {', '.join(sorted(USER_ROLES))}")
     if mongo.db.users.find_one({'username': username}):
         return None
     
     user = {
         'username': username,
         'password': generate_password_hash(password),
-        'landing_page': landing_page or None
+        'landing_page': landing_page or None,
+        'role': role,
     }
     
     if additional_fields:
         user.update(additional_fields)
+    if user.get('role') not in USER_ROLES:
+        raise ValueError(f"Role must be one of: {', '.join(sorted(USER_ROLES))}")
     
     result = mongo.db.users.insert_one(user)
     return str(result.inserted_id)
@@ -43,6 +49,8 @@ def get_user_by_id(user_id):
 def update_user(user_id, update_fields):
     if not ObjectId.is_valid(str(user_id)):
         return False
+    if 'role' in update_fields and update_fields['role'] not in USER_ROLES:
+        raise ValueError(f"Role must be one of: {', '.join(sorted(USER_ROLES))}")
     result = mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_fields})
     return result.matched_count > 0
 

@@ -14,7 +14,7 @@ Install:
 
 - Git;
 - Docker Engine;
-- Docker Compose v2 (`docker compose`);
+- Docker Compose CLI (`docker-compose`);
 - an HTTPS-capable Traefik instance for the production configuration;
 - DNS access for the chosen public hostname.
 
@@ -23,7 +23,7 @@ Verify the tools:
 ```bash
 git --version
 docker --version
-docker compose version
+docker-compose version
 ```
 
 ## 2. Check out the repository
@@ -94,30 +94,47 @@ Never commit real production secrets.
 
 ## 5. Prepare MongoDB storage
 
-The Compose stack bind-mounts `mongo-data` and `mongo-logs` from the checkout.
-Create them before the first start:
+The Compose stack stores `/data/db` in the explicitly named Docker volume
+`reasonreport-mongo-data`. Because its name does not depend on the checkout
+directory or Compose project name, normal rebuilds, container recreation, and
+`docker-compose down` followed by `up` reuse the same database. Do not run
+`docker-compose down -v` or manually remove that volume unless you intend to
+delete the database.
+
+MongoDB logs remain bind-mounted from the checkout. Create that directory
+before the first start:
 
 ```bash
-mkdir -p mongo-data mongo-logs
+mkdir -p mongo-logs
 ```
 
 If MongoDB reports permission errors on Linux, assign the directories to the
 MongoDB container user:
 
 ```bash
-sudo chown -R 999:999 mongo-data mongo-logs
+sudo chown -R 999:999 mongo-logs
+```
+
+If upgrading from a version that used the checkout's `mongo-data/` directory,
+create a backup before changing Compose configuration, start the new stack,
+and restore it into the named volume:
+
+```bash
+docker-compose exec -T mongo mongodump --archive --db flaskdb > flaskdb.archive
+docker-compose up -d mongo
+docker-compose exec -T mongo mongorestore --archive --drop < flaskdb.archive
 ```
 
 ## 6. Build the application and JupyterLite
 
 ```bash
-docker compose build flaskapprr
+docker-compose build flaskapprr
 ```
 
 For a clean build with complete diagnostic output:
 
 ```bash
-docker compose build --no-cache --progress=plain flaskapprr
+docker-compose build --no-cache --progress=plain flaskapprr
 ```
 
 The Dockerfile keeps dependency installation, TypeScript/extension compilation,
@@ -170,14 +187,14 @@ after replacing the container.
 ## 7. Start and verify MongoDB
 
 ```bash
-docker compose up -d mongo
-docker compose logs -f mongo
+docker-compose up -d mongo
+docker-compose logs -f mongo
 ```
 
 Once MongoDB is ready, stop following the log with `Ctrl+C` and run:
 
 ```bash
-docker compose exec mongo mongosh --eval 'db.runCommand({ ping: 1 })'
+docker-compose exec mongo mongosh --eval 'db.runCommand({ ping: 1 })'
 ```
 
 The result should contain `ok: 1`.
@@ -185,14 +202,14 @@ The result should contain `ok: 1`.
 ## 8. Start the website
 
 ```bash
-docker compose up -d flaskapprr
-docker compose ps
+docker-compose up -d flaskapprr
+docker-compose ps
 ```
 
 Follow the application log if startup fails:
 
 ```bash
-docker compose logs -f flaskapprr
+docker-compose logs -f flaskapprr
 ```
 
 The Flask service listens on port 5000 inside the Docker networks. Traefik
@@ -203,7 +220,7 @@ forwards the public HTTPS hostname to that internal port.
 For local development, start Compose with the development override:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up flaskapprr
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up flaskapprr
 ```
 
 Both Compose files declare the same Compose format version, so this command is
@@ -228,7 +245,7 @@ when the pull changes dependencies, the Dockerfile, build configuration, or
 system packages:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.dev.yml up \
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up \
   --build flaskapprr
 ```
 
@@ -248,7 +265,7 @@ curl -I https://rr.alkemata.com/jupyterlite/
 Confirm that the generated JupyterLite site exists in the application image:
 
 ```bash
-docker compose exec flaskapprr \
+docker-compose exec flaskapprr \
   test -f /opt/jupyterlite/index.html
 ```
 
@@ -281,9 +298,9 @@ meta policy as well as externalizing its bootstrap scripts.
 If `/jupyterlite/` fails, inspect both the image contents and Flask log:
 
 ```bash
-docker compose exec flaskapprr \
+docker-compose exec flaskapprr \
   find /opt/jupyterlite -maxdepth 2 -type f | head -30
-docker compose logs --tail=200 flaskapprr
+docker-compose logs --tail=200 flaskapprr
 ```
 
 ## 10. Exercise the notebook workflow
@@ -304,16 +321,30 @@ docker compose logs --tail=200 flaskapprr
 Inspect stored notebook records when troubleshooting:
 
 ```bash
-docker compose exec mongo mongosh flaskdb --eval \
+docker-compose exec mongo mongosh flaskdb --eval \
   'db.notebooks.find({}, {title: 1, slug: 1, author: 1, is_public: 1}).pretty()'
 ```
 
 Inspect users with:
 
 ```bash
-docker compose exec mongo mongosh flaskdb --eval \
-  'db.users.find({}, {username: 1}).pretty()'
+docker-compose exec mongo mongosh flaskdb --eval \
+  'db.users.find({}, {username: 1, role: 1}).pretty()'
 ```
+
+The repository also provides maintenance wrappers which run `mongosh` inside
+the Compose MongoDB container:
+
+```bash
+./scripts/list_users.sh
+./scripts/list_documents.sh
+./scripts/delete_user.sh USERNAME
+./scripts/delete_document.sh DOCUMENT_ID
+```
+
+`delete_user.sh` removes the selected user and all of their documents;
+`delete_document.sh` accepts the `_id` printed by `list_documents.sh`. Back up
+MongoDB before using either deletion command.
 
 Verify login, the current-user endpoint, and logout with a cookie jar:
 
@@ -349,7 +380,7 @@ Then run:
 ```bash
 docker network inspect traefik_web >/dev/null 2>&1 \
   || docker network create traefik_web
-docker compose up --build
+docker-compose up --build
 ```
 
 The pages are then available at `http://localhost:5000`. For plain HTTP local
@@ -360,9 +391,9 @@ development, set `JWT_COOKIE_SECURE=false` in the local `.env` file. Keep it
 
 ```bash
 git pull --ff-only
-docker compose build flaskapprr
-docker compose up -d --force-recreate flaskapprr
-docker compose ps
+docker-compose build flaskapprr
+docker-compose up -d --force-recreate flaskapprr
+docker-compose ps
 ```
 
 Always rebuild the image after changing the extension, Python requirements, or
@@ -374,32 +405,32 @@ JupyterLite static site.
 Show status:
 
 ```bash
-docker compose ps
+docker-compose ps
 ```
 
 Follow all logs:
 
 ```bash
-docker compose logs -f
+docker-compose logs -f
 ```
 
 Restart Flask:
 
 ```bash
-docker compose restart flaskapprr
+docker-compose restart flaskapprr
 ```
 
 Stop the stack without deleting MongoDB data:
 
 ```bash
-docker compose down
+docker-compose down
 ```
 
 Back up MongoDB:
 
 ```bash
 mkdir -p backups
-docker compose exec -T mongo mongodump --archive --db flaskdb \
+docker-compose exec -T mongo mongodump --archive --db flaskdb \
   > "backups/flaskdb-$(date +%Y%m%d-%H%M%S).archive"
 ```
 
