@@ -108,6 +108,7 @@ class EditorApiSecurityTest(unittest.TestCase):
 
     def test_admin_overview_returns_user_and_document_summary(self):
         self.user['username'] = 'admin'
+        self.user['role'] = 'admin'
         self.sessions.find_one.return_value = {'user_id': 'user-id'}
         cursor = MagicMock()
         cursor.sort.return_value.limit.return_value.__iter__.return_value = iter([{

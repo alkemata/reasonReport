@@ -312,8 +312,22 @@ Inspect users with:
 
 ```bash
 docker compose exec mongo mongosh flaskdb --eval \
-  'db.users.find({}, {username: 1}).pretty()'
+  'db.users.find({}, {username: 1, role: 1}).pretty()'
 ```
+
+The repository also provides maintenance wrappers which run `mongosh` inside
+the Compose MongoDB container:
+
+```bash
+./scripts/list_users.sh
+./scripts/list_documents.sh
+./scripts/delete_user.sh USERNAME
+./scripts/delete_document.sh DOCUMENT_ID
+```
+
+`delete_user.sh` removes the selected user and all of their documents;
+`delete_document.sh` accepts the `_id` printed by `list_documents.sh`. Back up
+MongoDB before using either deletion command.
 
 Verify login, the current-user endpoint, and logout with a cookie jar:
 

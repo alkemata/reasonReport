@@ -111,20 +111,21 @@ def login_return_url():
 
 @app.route('/')
 def index():
-    admin = get_user_by_username('admin')
+    admin = get_user_by_username(app.config['ADMIN_USERNAME'])
     if not admin:
         user_info = get_user_info_from_token()
         return render_template(
             'error.html', error='Admin main page not found', is_author=False, **user_info
         ), 404
-    query = {'slug': 'mainpage', 'author': str(admin['_id'])}
+    index_page_name = app.config['INDEX_PAGE_NAME']
+    query = {'slug': index_page_name, 'author': str(admin['_id'])}
     notebook = mongo.db.notebooks.find_one(query)
     if not notebook:
         user_info = get_user_info_from_token()
         return render_template(
             'error.html', error='Main page not found', is_author=False, **user_info
         ), 404
-    return redirect(url_for('notebook', slug='mainpage'))
+    return redirect(url_for('notebook', slug=index_page_name))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -164,7 +165,8 @@ def register():
             return render_template('register.html', error_message=error_message)
         
         # Create user and associated notebook
-        user_id = create_user(username, password)
+        role = 'admin' if username == app.config['ADMIN_USERNAME'] else 'user'
+        user_id = create_user(username, password, role=role)
         if user_id:
             # Create a notebook and authenticate the new user immediately.
             notebook_id = create_notebook(user_id, username)

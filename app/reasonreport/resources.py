@@ -1,6 +1,6 @@
 # resources.py
 from flask_restful import Resource, reqparse
-from flask import jsonify, make_response, request
+from flask import current_app, jsonify, make_response, request
 from models import (
     create_user, get_user_by_username, get_user_by_id, update_user, delete_user,
     create_notebook_content, create_new_notebook, save_notebook, get_notebook, delete_notebook
@@ -19,7 +19,8 @@ class UserRegister(Resource):
 
         try:
             username = args['username'].strip()
-            user_id = create_user(username, args['password'])
+            role = 'admin' if username == current_app.config['ADMIN_USERNAME'] else 'user'
+            user_id = create_user(username, args['password'], role=role)
             if user_id:
                 token = generate_token(user_id)
                 response = make_response(jsonify({
@@ -49,6 +50,10 @@ def public_user(user):
     return {
         'id': str(user['_id']),
         'username': user['username'],
+        'role': user.get(
+            'role',
+            'admin' if user['username'] == current_app.config['ADMIN_USERNAME'] else 'user',
+        ),
         'landing_page': user.get('landing_page')
     }
 
