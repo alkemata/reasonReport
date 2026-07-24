@@ -47,5 +47,4 @@ networks:
 
 volumes:
   mongo-data:
-    name: reasonreport-mongo-data
     driver: local

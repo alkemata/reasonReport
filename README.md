@@ -39,8 +39,8 @@ documents authored by that user.
 Use `list_documents.sh` to obtain a document's MongoDB `_id` before deleting
 it. These destructive commands cannot be undone, so back up the database first.
 
-MongoDB data is stored in the stable `reasonreport-mongo-data` Docker volume.
-Container rebuilds and `docker-compose down` do not remove it; avoid
-`docker-compose down -v` unless deleting the database is intentional. See
-[INSTALL.md](INSTALL.md#5-prepare-mongodb-storage) for migration and backup
-instructions.
+MongoDB data is stored in the Compose-managed `mongo-data` Docker volume.
+Container rebuilds and `docker-compose down` do not remove it; keep the same
+Compose project name and avoid `docker-compose down -v` unless deleting the
+database is intentional. See [INSTALL.md](INSTALL.md#5-prepare-mongodb-storage)
+for migration and backup instructions.

@@ -94,12 +94,11 @@ Never commit real production secrets.
 
 ## 5. Prepare MongoDB storage
 
-The Compose stack stores `/data/db` in the explicitly named Docker volume
-`reasonreport-mongo-data`. Because its name does not depend on the checkout
-directory or Compose project name, normal rebuilds, container recreation, and
-`docker-compose down` followed by `up` reuse the same database. Do not run
-`docker-compose down -v` or manually remove that volume unless you intend to
-delete the database.
+The Compose stack stores `/data/db` in its managed `mongo-data` Docker volume.
+Normal rebuilds, container recreation, and `docker-compose down` followed by
+`up` reuse the same database. Keep the same Compose project name (which defaults
+to the checkout directory name), and do not run `docker-compose down -v` or
+manually remove the project volume unless you intend to delete the database.
 
 MongoDB logs remain bind-mounted from the checkout. Create that directory
 before the first start:
