@@ -141,6 +141,11 @@ async function publishNotebook(
     method: isNew ? 'POST' : 'PUT',
     body: JSON.stringify({ notebook })
   });
+  if (typeof payload.slug !== 'string' || !payload.slug) {
+    throw new Error(
+      'The server did not return a valid page slug. Correct the page and publish again.'
+    );
+  }
   sendToParent({
     source: 'reasonreport-jupyterlite',
     msgtype: 'publish-result',
