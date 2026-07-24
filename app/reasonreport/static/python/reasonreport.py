@@ -72,3 +72,8 @@ async def query_documents(filters=None, limit=50):
         method='POST',
         payload={'filters': filters or {}, 'limit': int(limit)},
     ))['documents']
+
+
+async def admin_overview():
+    """Return user count and the 10 newest pages; available only to admin."""
+    return await _request('/api/editor/admin/overview')

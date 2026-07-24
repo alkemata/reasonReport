@@ -133,9 +133,39 @@ runs `jupyter lite build`. Internet access to PyPI and the Yarn/npm registries i
 therefore required during this step.
 
 The build also seeds the JupyterLite contents service from
-`jupyterlite-content/` and verifies that `api/contents/all.json` exists. The
-Pyodide kernel currently loads its pinned runtime from jsDelivr, so production
-clients must be able to reach `https://cdn.jsdelivr.net/pyodide/`.
+`jupyterlite-content/` and verifies that `api/contents/all.json` exists. It
+downloads Pyodide 0.27.6 while building the image and serves the runtime from
+`/jupyterlite/static/pyodide/`. Browsers therefore do not need to connect to an
+external CDN for the Python runtime.
+The pure-Python `comm` dependency is also downloaded at image-build time and
+added to JupyterLite's local piplite index. The piplite/micropip resolver can
+still consult PyPI while resolving dependencies, so `connect-src` permits
+`https://pypi.org` and wheel downloads from `https://files.pythonhosted.org`.
+These are connection sources rather than script sources: wheels are package
+data interpreted inside Pyodide, not JavaScript executed by the browser.
+
+### Why CSP errors appear one resource at a time
+
+Content Security Policy is an allowlist enforced by the browser. `script-src`
+controls executable scripts, while `connect-src` controls `fetch`, XHR, and
+similar network requests. When a directive is absent, the browser falls back
+to `default-src`. A policy such as `default-src 'self' data:` therefore denies
+every HTTPS origin other than the site that served the page.
+
+JupyterLite runs Python in the browser. Its Pyodide kernel may fetch both the
+Python runtime and missing Python wheels, so fixing one external request can
+reveal the next one. ReasonReport reduces that sequence by bundling both the
+Pyodide runtime and required startup wheels into the image. The PyPI origins
+remain explicitly allowed for dependency resolution and packages installed
+interactively by notebook code.
+
+CSP can be supplied by an HTTP response header, an HTML meta element, and a
+reverse proxy. Browsers enforce all policies at once; a permissive Flask header
+cannot weaken a stricter Traefik header or meta policy. JupyterLite also uses a
+service worker, so old application configuration can remain cached after a
+deployment. Inspect every `Content-Security-Policy` response header and the
+page's meta policy, then unregister the old service worker or clear site data
+after replacing the container.
 
 ## 7. Start and verify MongoDB
 
@@ -167,6 +197,43 @@ docker compose logs -f flaskapprr
 
 The Flask service listens on port 5000 inside the Docker networks. Traefik
 forwards the public HTTPS hostname to that internal port.
+
+### Development hot reload
+
+For local development, start Compose with the development override:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up flaskapprr
+```
+
+Both Compose files declare the same Compose format version, so this command is
+also compatible with legacy `docker-compose` installations that otherwise
+interpret a versionless override as the old version 1 format.
+The application bind mount is declared only by `docker-compose.yml`; the
+development override inherits it rather than declaring `/app` a second time.
+This avoids the duplicate-mount error raised by some Compose releases.
+
+The override enables Flask's debugger/reloader, so changes under `app/` are
+picked up without restarting the container. It also watches
+`flask_extension/src/`; after a TypeScript change it rebuilds the federated
+extension and JupyterLite site automatically. Wait for the
+`JupyterLite extension rebuild complete` log message, then reload the editor
+page. A JupyterLite service worker may retain the prior build, so use a hard
+reload or clear the site's service worker/cache if the new extension does not
+appear.
+
+If `git pull` only changes Flask application files, templates, static files, or
+extension source, the running development stack reloads them. Rebuild the image
+when the pull changes dependencies, the Dockerfile, build configuration, or
+system packages:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up \
+  --build flaskapprr
+```
+
+Do not use the development override in production: Flask debug mode permits
+interactive debugging, and the source watcher consumes extra resources.
 
 ## 9. Verify the HTTP endpoints
 

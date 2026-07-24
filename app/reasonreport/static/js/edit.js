@@ -35,6 +35,33 @@
         return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     }
 
+    function finishPublishing() {
+        publishing = false;
+        const publishButton = document.getElementById('publish-button');
+        if (publishButton) {
+            publishButton.disabled = false;
+            publishButton.textContent = 'Publish';
+        }
+    }
+
+    async function publishedSlug(message) {
+        if (message.slug) {
+            return message.slug;
+        }
+        if (!message.documentId) {
+            return '';
+        }
+        const response = await fetch(
+            `/api/notebooks/query/${encodeURIComponent(message.documentId)}`,
+            { credentials: 'include' }
+        );
+        if (!response.ok) {
+            return '';
+        }
+        const payload = await response.json();
+        return typeof payload.slug === 'string' ? payload.slug : '';
+    }
+
     function installEditorButtons() {
         const createControl = document.querySelector('.dropdown');
         if (createControl) {
@@ -73,7 +100,7 @@
         authButtons.append(publishButton, closeButton);
     }
 
-    window.addEventListener('message', event => {
+    window.addEventListener('message', async event => {
         if (
             event.origin !== expectedOrigin ||
             event.source !== iframe.contentWindow ||
@@ -90,14 +117,15 @@
         } else if (message.msgtype === 'loaded') {
             editorReady = true;
         } else if (message.msgtype === 'publish-result') {
-            window.location.assign(`/id/${encodeURIComponent(message.documentId)}`);
-        } else if (message.msgtype === 'error') {
-            publishing = false;
-            const publishButton = document.getElementById('publish-button');
-            if (publishButton) {
-                publishButton.disabled = false;
-                publishButton.textContent = 'Publish';
+            finishPublishing();
+            const slug = await publishedSlug(message);
+            if (!slug) {
+                window.alert('The published page did not return a valid slug.');
+                return;
             }
+            window.location.assign(`/slug/${encodeURIComponent(slug)}`);
+        } else if (message.msgtype === 'error') {
+            finishPublishing();
             window.alert(message.message || 'The notebook operation failed.');
         }
     });
