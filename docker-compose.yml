@@ -37,6 +37,8 @@ services:
       - SECRET_KEY=${SECRET_KEY:-development-flask-key-change-me-32}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-development-jwt-key-change-me-32}
       - JWT_COOKIE_SECURE=${JWT_COOKIE_SECURE:-true}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - INDEX_PAGE_NAME=${INDEX_PAGE_NAME:-mainpage}
 
 
 networks:

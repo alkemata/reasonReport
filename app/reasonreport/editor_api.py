@@ -172,7 +172,7 @@ class EditorAdminOverview(Resource):
     @token_required
     @editor_session_required
     def get(self):
-        if request.user.get('username') != 'admin':
+        if request.user.get('role') != 'admin':
             return {'message': 'Administrator access required'}, 403
 
         documents = list(mongo.db.notebooks.find({}).sort('date', -1).limit(10))
