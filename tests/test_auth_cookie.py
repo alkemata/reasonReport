@@ -17,6 +17,8 @@ class AuthenticationCookieTest(unittest.TestCase):
             TESTING=True,
             JWT_COOKIE_SECURE=True,
             JWT_ACCESS_TOKEN_EXPIRES=86400,
+            ADMIN_USERNAME='site-owner',
+            INDEX_PAGE_NAME='front-page',
         )
         self.client = reasonreport_app.app.test_client()
 
@@ -56,12 +58,14 @@ class AuthenticationCookieTest(unittest.TestCase):
             b'name="next" value="/slug/article?view=full"', response.data
         )
 
-    def test_index_redirects_to_admin_mainpage(self):
-        admin = {'_id': 'admin-id', 'username': 'admin'}
+    def test_index_uses_configured_admin_and_page(self):
+        admin = {'_id': 'admin-id', 'username': 'site-owner', 'role': 'admin'}
         notebooks = MagicMock()
-        notebooks.find_one.return_value = {'slug': 'mainpage', 'author': 'admin-id'}
+        notebooks.find_one.return_value = {'slug': 'front-page', 'author': 'admin-id'}
         with (
-            patch.object(reasonreport_app, 'get_user_by_username', return_value=admin),
+            patch.object(
+                reasonreport_app, 'get_user_by_username', return_value=admin
+            ) as get_admin,
             patch.object(
                 reasonreport_app,
                 'mongo',
@@ -71,9 +75,10 @@ class AuthenticationCookieTest(unittest.TestCase):
             response = self.client.get('/')
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.location, '/slug/mainpage')
+        self.assertEqual(response.location, '/slug/front-page')
+        get_admin.assert_called_once_with('site-owner')
         notebooks.find_one.assert_called_once_with(
-            {'slug': 'mainpage', 'author': 'admin-id'}
+            {'slug': 'front-page', 'author': 'admin-id'}
         )
 
     def test_editor_redirects_anonymous_user_to_login(self):

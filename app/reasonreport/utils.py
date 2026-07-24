@@ -43,7 +43,11 @@ def token_required(f):
         # Attach user info to the request
         request.user = {
             'id': str(user['_id']),
-            'username': user['username']
+            'username': user['username'],
+            'role': user.get(
+                'role',
+                'admin' if user['username'] == current_app.config['ADMIN_USERNAME'] else 'user',
+            ),
         }
         
         return f(*args, **kwargs)

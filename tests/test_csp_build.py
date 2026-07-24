@@ -79,6 +79,12 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         self.assertIn('background-color: #dff3e4', styles)
         self.assertIn('color: #176b3a', styles)
 
+    def test_default_browser_title_uses_product_name(self):
+        template = Path('app/reasonreport/templates/base.html').read_text()
+
+        self.assertIn('title if title else "Reason Report"', template)
+        self.assertNotIn('Flask App', template)
+
     def test_publish_errors_reenable_publish_button(self):
         editor_script = Path('app/reasonreport/static/js/edit.js').read_text()
 
@@ -90,6 +96,15 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         missing_slug = editor_script.index('if (!slug)', publish_result)
         reset = editor_script.index('finishPublishing();', publish_result)
         self.assertLess(reset, missing_slug)
+
+    def test_editor_requests_storage_cleanup_when_closed(self):
+        editor_script = Path('app/reasonreport/static/js/edit.js').read_text()
+        extension = Path('flask_extension/src/index.ts').read_text()
+
+        self.assertIn("send({ msgtype: 'cleanup', documentId })", editor_script)
+        self.assertIn("msgtype: 'cleanup-result'", extension)
+        self.assertIn('window.localStorage.clear()', extension)
+        self.assertIn('await contents.delete(entry.path)', extension)
 
     def test_missing_contents_manifest_returns_empty_drive(self):
         import app as reasonreport_app
