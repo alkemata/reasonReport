@@ -17,6 +17,8 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         self.assertIn("version: '3'", base_compose)
         self.assertIn("version: '3'", compose)
         self.assertIn('FLASK_DEBUG: "true"', compose)
+        self.assertNotIn('./app:/app', compose)
+        self.assertEqual(base_compose.count('./app:/app'), 1)
         self.assertIn('flask run --debug', script)
         self.assertIn('/build/flask_extension/src', compose)
         self.assertIn('npm run build:prod', script)

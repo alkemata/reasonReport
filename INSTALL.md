@@ -209,6 +209,9 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up flaskapprr
 Both Compose files declare the same Compose format version, so this command is
 also compatible with legacy `docker-compose` installations that otherwise
 interpret a versionless override as the old version 1 format.
+The application bind mount is declared only by `docker-compose.yml`; the
+development override inherits it rather than declaring `/app` a second time.
+This avoids the duplicate-mount error raised by some Compose releases.
 
 The override enables Flask's debugger/reloader, so changes under `app/` are
 picked up without restarting the container. It also watches
