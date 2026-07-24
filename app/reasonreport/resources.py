@@ -135,10 +135,16 @@ class NotebookCreate(Resource): #todo add logic to validate the notebook
         author_id = request.user['id']
         payload = request.get_json(silent=True) or {}
         try:
-            notebook_id = create_new_notebook(author_id, payload)
+            notebook_id, slug = create_new_notebook(
+                author_id, request.user['username'], payload
+            )
         except (ValueError, TypeError) as error:
             return {'message': str(error)}, 400
-        return {'message': 'Notebook created', 'notebook_id': notebook_id}, 201
+        return {
+            'message': 'Notebook created',
+            'notebook_id': notebook_id,
+            'slug': slug,
+        }, 201
 
 class NotebookSave(Resource):
     @token_required
@@ -152,12 +158,14 @@ class NotebookSave(Resource):
         if notebook['author'] != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
         try:
-            result = save_notebook(notebook_id, request.user['id'], payload)
+            slug = save_notebook(
+                notebook_id, request.user['id'], request.user['username'], payload
+            )
         except (ValueError, TypeError) as error:
             return {'message': str(error)}, 400
-        if result != 'ok':
+        if not slug:
             return {'message': 'Notebook not found'}, 404
-        return {'message': 'OK', 'notebook_id': notebook_id}, 200
+        return {'message': 'OK', 'notebook_id': notebook_id, 'slug': slug}, 200
 
 class NotebookQuery(Resource):
     @token_required
@@ -165,7 +173,11 @@ class NotebookQuery(Resource):
                 
         user_id=request.user['id']
         if notebook_id == '-1':
-            return {'notebook': create_notebook_content(user_id)}, 200
+            return {
+                'notebook': create_notebook_content(
+                    user_id, request.user['username']
+                )
+            }, 200
         else:
             notebook = get_notebook(notebook_id,user_id)
         
@@ -178,7 +190,10 @@ class NotebookQuery(Resource):
             return {'message': 'Unauthorized access to this notebook'}, 403
         
         notebook['_id'] = str(notebook['_id'])
-        return {'notebook': notebook['notebook']}, 200
+        return {
+            'notebook': notebook['notebook'],
+            'slug': notebook.get('slug', ''),
+        }, 200
 
 class NotebookDelete(Resource):
     @token_required

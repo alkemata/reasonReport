@@ -57,6 +57,19 @@ expires_at = await reasonreport.refresh_session()
 If renewal fails, reopen the notebook through the authenticated ReasonReport
 editor. Do not copy `.reasonreport-session.json` or its token elsewhere.
 
+## Administrator overview
+
+The user named `admin` can display the user count and the ten most recently
+created documents, including their title, slug, and author name:
+
+```python
+overview = await reasonreport.admin_overview()
+overview
+```
+
+Other users receive an administrator-access error. This command exposes only
+the listed summary fields and never returns password hashes.
+
 ## Security model
 
 Every editor API request must satisfy all of the following:

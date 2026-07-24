@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  flaskapprr:
+    command: /bin/sh /usr/local/bin/reasonreport-dev
+    environment:
+      FLASK_DEBUG: "true"
+      JWT_COOKIE_SECURE: "false"
+    volumes:
+      - ./app:/app
+      - ./flask_extension/src:/build/flask_extension/src:ro
+      - ./jupyterlite-content:/build/jupyterlite-content:ro
+      - ./scripts/dev_server.sh:/usr/local/bin/reasonreport-dev:ro
+      - ./scripts/externalize_inline_scripts.py:/usr/local/bin/externalize-inline-scripts:ro

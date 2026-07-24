@@ -11,6 +11,7 @@ interface BridgeResponse {
   msgtype: 'ready' | 'loaded' | 'publish-result' | 'error';
   requestId?: string;
   documentId?: string;
+  slug?: string;
   message?: string;
 }
 
@@ -144,7 +145,8 @@ async function publishNotebook(
     source: 'reasonreport-jupyterlite',
     msgtype: 'publish-result',
     requestId,
-    documentId: payload.notebook_id || documentId
+    documentId: payload.notebook_id || documentId,
+    slug: payload.slug
   });
 }
 
