@@ -6,6 +6,9 @@ first-notebook instructions.
 
 See [JUPYTERLITE_API.md](JUPYTERLITE_API.md) for the Python client available inside notebooks.
 
+See [MCP_SERVER.md](MCP_SERVER.md) to deploy the authenticated MCP endpoint and
+connect ChatGPT or another MCP client to notebooks as a knowledge database.
+
 ## User roles and home page
 
 Every newly registered user is stored with one of three roles: `admin`,
