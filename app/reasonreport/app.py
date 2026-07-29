@@ -3,7 +3,7 @@ import os
 from urllib.parse import urlsplit
 
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_from_directory, make_response, flash
-from flask_restful import Api, Resource
+from flask_restful import Api
 from config import Config
 from models import mongo, get_notebook, get_user_by_username, get_user_by_id, notebook_html, create_notebook, create_user
 from resources import (
@@ -16,12 +16,10 @@ from editor_api import (
     create_editor_launch
 )
 from utils import clear_auth_cookie, decode_token, generate_token, set_auth_cookie
-from bson.objectid import ObjectId
 from flask_debugtoolbar import DebugToolbarExtension
 import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from notebooks import create_blank_notebook
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -178,7 +176,7 @@ def register():
         user_id = create_user(username, password, role=role)
         if user_id:
             # Create a notebook and authenticate the new user immediately.
-            notebook_id = create_notebook(user_id, username)
+            create_notebook(user_id, username)
             token = generate_token(user_id)
             flash(f"Welcome, {username}. Your account was created successfully.", 'success')
             response = redirect(next_page)
