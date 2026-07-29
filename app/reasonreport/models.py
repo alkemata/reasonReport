@@ -58,7 +58,9 @@ def delete_user(user_id):
     if not ObjectId.is_valid(str(user_id)):
         return False
     result = mongo.db.users.delete_one({'_id': ObjectId(user_id)})
-    mongo.db.notebooks.delete_many({'author': str(user_id)})
+    mongo.db.notebooks.delete_many({'$or': [
+        {'owner_id': str(user_id)}, {'author': str(user_id)}
+    ]})
     return result.deleted_count > 0
 
 
@@ -68,10 +70,12 @@ DEFAULT_TITLE = "Please enter the title here"
 
 def create_notebook(author_id, author_name=None):
     nb = create_notebook_content(author_id, author_name)
+    now = datetime.utcnow()
     notebook = {
         'notebook': nb,
-        'author': author_id,
-        'date': datetime.utcnow(),
+        'owner_id': str(author_id),
+        'created_at': now,
+        'updated_at': now,
         'title': "",
         'slug': "",
         'is_public': False
@@ -81,26 +85,11 @@ def create_notebook(author_id, author_name=None):
 
 
 def create_notebook_content(author_id, author_name=None):
-    if not author_name:
-        author = get_user_by_id(author_id)
-        author_name = author['username'] if author else str(author_id)
     nb = nbformat.v4.new_notebook()
-    
-    # Pre-processing: Add three cells with tags author, date, and title
+    # The editor owns the title. Identity and timestamps are deliberately absent
+    # from the client-editable notebook and are stored on the Mongo document.
+    nb.metadata['title'] = DEFAULT_TITLE
     cells = []
-    
-    # Author Cell
-    cells.append(nbformat.v4.new_markdown_cell("Author:"))
-    cells.append(nbformat.v4.new_markdown_cell(author_name))
-    cells[-1].metadata['type']="author"
-    
-    # Date Cell
-    cells.append(nbformat.v4.new_markdown_cell("Date of creation:"))
-    cells.append(nbformat.v4.new_markdown_cell(f"{datetime.utcnow().isoformat()}"))
-    cells[-1].metadata['type']="date"
-    # Title Cell
-    cells.append(nbformat.v4.new_markdown_cell(f"# Please enter the title here #"))
-    cells[-1].metadata['type']="title"
 
     # Summary
     cells.append(nbformat.v4.new_markdown_cell("Summary:"))
@@ -125,9 +114,12 @@ def save_notebook(notebook_id, author_id, author_name, notebook_json):
         author_name,
         notebook_json,
         notebook_id=notebook_id,
-        created_at=existing.get('date')
+        created_at=existing.get('created_at', existing.get('date'))
     )
-    mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
+    mongo.db.notebooks.update_one(
+        {'_id': ObjectId(notebook_id)},
+        {'$set': update_fields, '$unset': {'author': '', 'date': ''}}
+    )
     return update_fields['slug']
 
 
@@ -142,7 +134,7 @@ def build_notebook_document(author_id, author_name, notebook_json,
         raise ValueError(f"Invalid notebook: {error}") from error
     metadata = find_metadata_cells(nb)
     if metadata == "error":
-        raise ValueError("Notebook requires non-empty title and date metadata cells")
+        raise ValueError("Notebook requires a non-empty title in notebook metadata")
 
     title = metadata['title'].strip().strip('#').strip()
     if title.casefold() == DEFAULT_TITLE.casefold():
@@ -151,26 +143,39 @@ def build_notebook_document(author_id, author_name, notebook_json,
     if not initial_slug:
         raise ValueError("Notebook title must produce a valid slug")
     slug = ensure_unique_slug(initial_slug, notebook_id)
+    nb.metadata['title'] = title
     set_author_cell(nb, author_name)
+    now = datetime.utcnow()
     return {
         'notebook': nb,
-        'author': str(author_id),
+        'owner_id': str(author_id),
         'slug': slug,
         'title': title,
-        'date': created_at or datetime.utcnow(),
+        'created_at': created_at or now,
+        'updated_at': now,
         'is_public': True
     }
 
 
 def set_author_cell(notebook, author_name):
-    """Set the visible author metadata cell from the authenticated user."""
+    """Remove client-editable legacy identity and timestamp cells.
+
+    ``author_name`` remains in the signature for callers using the old API, but
+    is intentionally ignored.  An author is resolved from ``owner_id`` when a
+    document is read, never copied into notebook content.
+    """
+    legacy_types = {'author', 'date'}
+    cleaned = []
     for cell in notebook.cells:
-        if cell.metadata.get('type') == 'author':
-            cell.source = author_name
-            return
-    notebook.cells.insert(
-        0, nbformat.v4.new_markdown_cell(author_name, metadata={'type': 'author'})
-    )
+        cell_type = cell.metadata.get('type')
+        if cell_type in legacy_types:
+            label = 'Author:' if cell_type == 'author' else 'Date of creation:'
+            if cleaned and cleaned[-1].cell_type == 'markdown' \
+                    and cleaned[-1].source.strip() == label:
+                cleaned.pop()
+            continue
+        cleaned.append(cell)
+    notebook.cells = cleaned
 
 def get_notebook(query, user_id):
     if isinstance(query, str) and ObjectId.is_valid(query):
@@ -180,6 +185,10 @@ def get_notebook(query, user_id):
     
     if notebook:
         if check_authorization(notebook, user_id):
+            owner_id = str(notebook.get('owner_id', notebook.get('author', '')))
+            notebook['owner_id'] = owner_id
+            owner = get_user_by_id(owner_id)
+            notebook['author'] = owner.get('username', 'Unknown') if owner else 'Unknown'
             return notebook
         else:
             return {'message': 'not_authorized'}
@@ -191,7 +200,8 @@ def check_authorization(notebook, user_id):
     Check if a user is authorized to access a notebook.
     The user must either be the author or the notebook must be public.
     """
-    return notebook['author'] == str(user_id) or notebook.get('is_public', True) #TODO Check
+    owner_id = notebook.get('owner_id', notebook.get('author'))
+    return str(owner_id) == str(user_id) or notebook.get('is_public', True) #TODO Check
 
 def delete_notebook(notebook_id):
     mongo.db.notebooks.delete_one({'_id': ObjectId(notebook_id)})
@@ -251,32 +261,23 @@ def find_cells_by_metadata(notebook_json, key, value):
 
 def find_metadata_cells(notebook_data):
     """
-    Find cells with metadata "type" values of "title", "author", "date", or "summary".
-    Check that they are not empty and return required information if all are present.
+    Read the title from standard notebook metadata.
 
-    :param nb_path: Path to the Jupyter Notebook file (e.g., "notebook.ipynb").
-    :return: A dictionary containing author, slug, and date if successful. Otherwise, raises an error.
+    A legacy ``type=title`` cell is accepted as a one-way migration path. Author
+    and date cells are never read because those values are server-owned.
+
+    :param notebook_data: A parsed Jupyter notebook.
+    :return: A dictionary containing the title, or ``"error"`` when absent.
     """
-    required_types = ["title", "date"]
-    metadata_values = {key: None for key in required_types}
-
-    # Iterate through the notebook cells to find required metadata
-    for cell in notebook_data.cells:
-        metadata = cell.metadata
-        if 'type' in metadata and metadata['type'] in required_types:
-            # Store the cell's content if it matches one of the required types
-            if cell.cell_type == 'markdown' or cell.cell_type == 'raw':
-                metadata_values[metadata['type']] = ''.join(cell.source).strip()
-
-    # Check if any of the required metadata is missing or empty
-    missing_or_empty = [key for key, value in metadata_values.items() if not value]
-    if missing_or_empty:
+    title = notebook_data.metadata.get('title', '')
+    if not isinstance(title, str):
         return "error"
-
-    # Create and return the resulting structure
-    result = {
-        'date': metadata_values['date'],
-        'title':metadata_values['title']
-    }
-
-    return result
+    title = title.strip()
+    if not title:
+        for cell in notebook_data.cells:
+            if (cell.metadata.get('type') == 'title'
+                    and cell.cell_type in {'markdown', 'raw'}):
+                title = ''.join(cell.source).strip()
+                if title:
+                    break
+    return {'title': title} if title else "error"

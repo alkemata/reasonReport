@@ -65,5 +65,7 @@ def delete_user(username):
         return f"User '{username}' not found."
     user_id = str(user['_id'])
     mongo.db.users.delete_one({'_id': user['_id']})
-    mongo.db.notebooks.delete_many({'author': user_id})
+    mongo.db.notebooks.delete_many({'$or': [
+        {'owner_id': user_id}, {'author': user_id}
+    ]})
     return f"User '{username}' deleted successfully."

@@ -17,7 +17,7 @@ SESSION_TTL_SECONDS = 900
 LAUNCH_TTL_SECONDS = 60
 EDITOR_HEADER = 'X-ReasonReport-Editor'
 TOKEN_HEADER = 'X-ReasonReport-Editor-Token'
-QUERY_FIELDS = {'_id', 'title', 'slug', 'author', 'is_public'}
+QUERY_FIELDS = {'_id', 'title', 'slug', 'owner_id', 'is_public'}
 
 
 def _digest(token):
@@ -79,17 +79,28 @@ def editor_session_required(function):
 
 
 def _access_filter(user_id):
-    return {'$or': [{'author': str(user_id)}, {'is_public': True}]}
+    return {'$or': [
+        {'owner_id': str(user_id)},
+        # Read compatibility until every legacy document has been saved.
+        {'author': str(user_id)},
+        {'is_public': True},
+    ]}
 
 
 def _summary(document):
-    date = document.get('date')
+    owner_id = str(document.get('owner_id', document.get('author', '')))
+    owner = (mongo.db.users.find_one({'_id': ObjectId(owner_id)})
+             if ObjectId.is_valid(owner_id) else None)
+    created_at = document.get('created_at', document.get('date'))
+    updated_at = document.get('updated_at', created_at)
     return {
         'id': str(document['_id']),
         'title': document.get('title', ''),
         'slug': document.get('slug', ''),
-        'author': document.get('author'),
-        'date': date.isoformat() if hasattr(date, 'isoformat') else date,
+        'owner_id': owner_id,
+        'author': owner.get('username', 'Unknown') if owner else 'Unknown',
+        'created_at': created_at.isoformat() if hasattr(created_at, 'isoformat') else created_at,
+        'updated_at': updated_at.isoformat() if hasattr(updated_at, 'isoformat') else updated_at,
         'is_public': bool(document.get('is_public', False)),
     }
 
@@ -123,7 +134,7 @@ class EditorNotebookList(Resource):
     @editor_session_required
     def get(self):
         limit = min(max(request.args.get('limit', 50, type=int), 1), 100)
-        documents = mongo.db.notebooks.find(_access_filter(request.user['id'])).sort('date', -1).limit(limit)
+        documents = mongo.db.notebooks.find(_access_filter(request.user['id'])).sort('updated_at', -1).limit(limit)
         return {'documents': [_summary(document) for document in documents]}, 200
 
 
@@ -164,7 +175,7 @@ class EditorNotebookQuery(Resource):
         if not isinstance(limit, int):
             return {'message': 'Limit must be an integer'}, 400
         limit = min(max(limit, 1), 100)
-        documents = mongo.db.notebooks.find({'$and': [query, _access_filter(request.user['id'])]}).sort('date', -1).limit(limit)
+        documents = mongo.db.notebooks.find({'$and': [query, _access_filter(request.user['id'])]}).sort('updated_at', -1).limit(limit)
         return {'documents': [_summary(document) for document in documents]}, 200
 
 
@@ -175,8 +186,10 @@ class EditorAdminOverview(Resource):
         if request.user.get('role') != 'admin':
             return {'message': 'Administrator access required'}, 403
 
-        documents = list(mongo.db.notebooks.find({}).sort('date', -1).limit(10))
-        author_ids = {document.get('author') for document in documents}
+        documents = list(mongo.db.notebooks.find({}).sort('updated_at', -1).limit(10))
+        author_ids = {
+            document.get('owner_id', document.get('author')) for document in documents
+        }
         author_ids.discard(None)
         authors = {
             str(user['_id']): user.get('username', 'Unknown')
@@ -190,6 +203,6 @@ class EditorAdminOverview(Resource):
             'documents': [{
                 'title': document.get('title', ''),
                 'slug': document.get('slug', ''),
-                'author': authors.get(str(document.get('author')), 'Unknown'),
+                'author': authors.get(str(document.get('owner_id', document.get('author'))), 'Unknown'),
             } for document in documents],
         }, 200

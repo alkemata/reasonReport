@@ -78,7 +78,13 @@ class AuthenticationCookieTest(unittest.TestCase):
         self.assertEqual(response.location, '/slug/front-page')
         get_admin.assert_called_once_with('site-owner')
         notebooks.find_one.assert_called_once_with(
-            {'slug': 'front-page', 'author': 'admin-id'}
+            {
+                'slug': 'front-page',
+                '$or': [
+                    {'owner_id': 'admin-id'},
+                    {'author': 'admin-id'},
+                ],
+            }
         )
 
     def test_editor_redirects_anonymous_user_to_login(self):
