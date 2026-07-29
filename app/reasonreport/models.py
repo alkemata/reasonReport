@@ -1,12 +1,11 @@
 # models.py
 from flask_pymongo import PyMongo
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 from bson.objectid import ObjectId
 from slugify import slugify
 import nbformat
 from nbconvert import HTMLExporter
 from datetime import datetime, timezone
-import json
 
 mongo = PyMongo()
 USER_ROLES = frozenset({'admin', 'editor', 'user'})
@@ -71,11 +70,13 @@ def delete_user(user_id):
 
 # Notebook Operations
 DEFAULT_TITLE = "Please enter the title here"
+SLUG_TITLE_MAX_LENGTH = 50
 
 
 def create_notebook(author_id, author_name=None):
     nb = create_notebook_content(author_id, author_name)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
+    notebook_id = ObjectId()
     notebook = {
         '_id': notebook_id,
         'notebook': nb,
@@ -84,15 +85,13 @@ def create_notebook(author_id, author_name=None):
         'updated_at': now,
         'title': "",
         'slug': f"notebook-{notebook_id}",
-        'created_at': now,
-        'updated_at': now,
         'visibility': 'private',
         'allowed_user_ids': [],
         'topic_ids': [],
         'revision': 1,
     }
-    result = mongo.db.notebooks.insert_one(notebook)
-    return str(result.inserted_id)
+    mongo.db.notebooks.insert_one(notebook)
+    return str(notebook_id)
 
 
 def create_notebook_content(author_id, author_name=None):
@@ -104,7 +103,7 @@ def create_notebook_content(author_id, author_name=None):
 
     # Summary
     cells.append(nbformat.v4.new_markdown_cell("Summary:"))
-    cells.append(nbformat.v4.new_markdown_cell(f" Please enter here a short introduction for your article "))
+    cells.append(nbformat.v4.new_markdown_cell(" Please enter here a short introduction for your article "))
     cells[-1].metadata['type']="summary"
     
     nb['cells'] = cells
@@ -147,16 +146,18 @@ def build_notebook_document(author_id, author_name, notebook_json,
     if metadata == "error":
         raise ValueError("Notebook requires a non-empty title in notebook metadata")
 
-    title = metadata['title'].strip().strip('#').strip()
+    # Only the first line is the publication title.  Limit the input used for
+    # the URL so pasted headings cannot produce unwieldy slugs.
+    title = metadata['title'].splitlines()[0].strip().strip('#').strip()
     if title.casefold() == DEFAULT_TITLE.casefold():
         raise ValueError(f'Title must be different from "{DEFAULT_TITLE}"')
-    initial_slug = slugify(title)
+    initial_slug = slugify(title[:SLUG_TITLE_MAX_LENGTH])
     if not initial_slug:
         raise ValueError("Notebook title must produce a valid slug")
     slug = ensure_unique_slug(initial_slug, notebook_id)
     nb.metadata['title'] = title
     set_author_cell(nb, author_name)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     return {
         'notebook': nb,
         'owner_id': str(author_id),

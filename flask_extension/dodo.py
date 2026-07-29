@@ -1129,7 +1129,7 @@ class U:
             out_text = re.sub(r"^[\-_]{3}$", "", out_text, flags=re.M)
             # what even is this
             out_text = re.sub("^[•▸] ", ">\n> ", out_text, flags=re.M)
-            out_text = re.sub("\*\*([^\*]+)\*\*", unescape_bold, out_text, flags=re.M)
+            out_text = re.sub(r"\*\*([^\*]+)\*\*", unescape_bold, out_text, flags=re.M)
             out_text = out_text.replace("/src]", "]")
             out_text = re.sub("/src$", "", out_text, flags=re.M)
             out_text = re.sub(
