@@ -32,8 +32,11 @@ RUN jupyter lite build \
     && grep -q '"pyodideUrl": "./static/pyodide/pyodide.js"' /opt/jupyterlite/jupyter-lite.json
 COPY scripts/externalize_inline_scripts.py /usr/local/bin/externalize-inline-scripts
 COPY scripts/migrate_mongodb_schema.py /usr/local/bin/migrate-reasonreport-schema
+COPY scripts/manage_mcp_token.py /usr/local/bin/manage-reasonreport-mcp-token
+RUN chmod 0755 /usr/local/bin/manage-reasonreport-mcp-token
 RUN externalize-inline-scripts /opt/jupyterlite
 
+COPY app /app
 WORKDIR /app/reasonreport
 ENV JUPYTERLITE_PATH=/opt/jupyterlite
 CMD python /usr/local/bin/migrate-reasonreport-schema && python -c "from models import mongo; from app import app; from database_init import initialize_database; app.app_context().push(); initialize_database(mongo.db)" && flask run -h 0.0.0.0 -p 5000

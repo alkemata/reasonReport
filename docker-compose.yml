@@ -5,8 +5,6 @@ services:
 
   mongo:
     image: mongo:latest
-    ports:
-      - "27017:27017"
     volumes:
       - ./mongo-config:/etc/mongo-config
       - mongo-data:/data/db
@@ -14,6 +12,9 @@ services:
     command: mongod --config /etc/mongo-config/mongod.conf
     networks:
       - default
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
     
   flaskapprr:
     build: .
@@ -32,13 +33,38 @@ services:
       - mongo
     environment:
       - PYTHONUNBUFFERED=1
-      - MONGO_URI=mongodb://mongo:27017/flaskdb
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongo:27017/flaskdb?authSource=admin
       - JUPYTERLITE_PATH=/opt/jupyterlite
       - SECRET_KEY=${SECRET_KEY:-development-flask-key-change-me-32}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-development-jwt-key-change-me-32}
       - JWT_COOKIE_SECURE=${JWT_COOKIE_SECURE:-true}
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - INDEX_PAGE_NAME=${INDEX_PAGE_NAME:-mainpage}
+
+  # Remote Streamable HTTP MCP server documented in MCP_SERVER.md.
+  # Use this exact service name with `docker-compose run --rm mcp ...`.
+  mcp:
+    build: .
+    working_dir: /app
+    command: python -m reasonreport_mcp.server
+    restart: unless-stopped
+    depends_on:
+      - mongo
+    networks:
+      - traefik_web
+      - default
+    environment:
+      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongo:27017/flaskdb?authSource=admin
+      - MCP_PUBLIC_URL=${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL, for example https://rr.example.com/mcp}
+      - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
+      - MCP_TOKEN_PEPPER=${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
+    labels:
+      traefik.enable: true
+      traefik.docker.network: traefik_web
+      traefik.http.routers.reasonreport-mcp.entrypoints: websecure
+      traefik.http.routers.reasonreport-mcp.rule: 'Host(`rr.alkemata.com`) && PathPrefix(`/mcp`)'
+      traefik.http.routers.reasonreport-mcp.priority: 100
+      traefik.http.services.reasonreport-mcp.loadbalancer.server.port: 8000
 
 
 networks:
