@@ -71,6 +71,34 @@ class NotebookPublicationTest(unittest.TestCase):
         self.assertEqual(query['slug'], 'renamed-page')
         self.assertIn('$ne', query['_id'])
 
+    def test_publication_uses_only_first_line_as_title(self):
+        notebooks = MagicMock()
+        notebooks.find_one.return_value = None
+        with patch.object(
+            models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
+        ):
+            document = models.build_notebook_document(
+                'user-id', 'Alice',
+                {'notebook': publication_notebook('# First Line #\nSecond line')},
+            )
+
+        self.assertEqual(document['title'], 'First Line')
+        self.assertEqual(document['slug'], 'first-line')
+
+    def test_publication_limits_slug_source_to_fifty_title_characters(self):
+        title = 'A' * 45 + ' five words after the limit'
+        notebooks = MagicMock()
+        notebooks.find_one.return_value = None
+        with patch.object(
+            models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
+        ):
+            document = models.build_notebook_document(
+                'user-id', 'Alice', {'notebook': publication_notebook(title)}
+            )
+
+        self.assertEqual(document['title'], title)
+        self.assertEqual(document['slug'], models.slugify(title[:50]))
+
     def test_new_notebook_uses_standard_title_metadata_only(self):
         notebook = models.create_notebook_content('user-id', 'Alice')
 

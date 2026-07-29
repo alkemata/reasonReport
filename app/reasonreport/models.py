@@ -70,6 +70,7 @@ def delete_user(user_id):
 
 # Notebook Operations
 DEFAULT_TITLE = "Please enter the title here"
+SLUG_TITLE_MAX_LENGTH = 50
 
 
 def create_notebook(author_id, author_name=None):
@@ -145,10 +146,12 @@ def build_notebook_document(author_id, author_name, notebook_json,
     if metadata == "error":
         raise ValueError("Notebook requires a non-empty title in notebook metadata")
 
-    title = metadata['title'].strip().strip('#').strip()
+    # Only the first line is the publication title.  Limit the input used for
+    # the URL so pasted headings cannot produce unwieldy slugs.
+    title = metadata['title'].splitlines()[0].strip().strip('#').strip()
     if title.casefold() == DEFAULT_TITLE.casefold():
         raise ValueError(f'Title must be different from "{DEFAULT_TITLE}"')
-    initial_slug = slugify(title)
+    initial_slug = slugify(title[:SLUG_TITLE_MAX_LENGTH])
     if not initial_slug:
         raise ValueError("Notebook title must produce a valid slug")
     slug = ensure_unique_slug(initial_slug, notebook_id)
