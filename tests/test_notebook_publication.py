@@ -26,7 +26,7 @@ class NotebookPublicationTest(unittest.TestCase):
             ValueError, 'Title must be different from "Please enter the title here"'
         ):
             models.build_notebook_document(
-                'user-id',
+                '507f1f77bcf86cd799439011',
                 'Alice',
                 {'notebook': publication_notebook('# Please enter the title here #')},
             )
@@ -38,12 +38,12 @@ class NotebookPublicationTest(unittest.TestCase):
             models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
         ):
             document = models.build_notebook_document(
-                'user-id',
+                '507f1f77bcf86cd799439011',
                 'Alice',
                 {'notebook': publication_notebook('# A Better Page #')},
             )
 
-        self.assertEqual(document['author'], 'user-id')
+        self.assertEqual(str(document['owner_id']), '507f1f77bcf86cd799439011')
         self.assertEqual(document['title'], 'A Better Page')
         self.assertEqual(document['slug'], 'a-better-page')
         author_cells = [
@@ -59,7 +59,7 @@ class NotebookPublicationTest(unittest.TestCase):
             models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
         ):
             document = models.build_notebook_document(
-                'user-id',
+                '507f1f77bcf86cd799439011',
                 'Alice',
                 {'notebook': publication_notebook('Renamed Page')},
                 notebook_id='507f1f77bcf86cd799439011',

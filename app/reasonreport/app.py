@@ -118,7 +118,7 @@ def index():
             'error.html', error='Admin main page not found', is_author=False, **user_info
         ), 404
     index_page_name = app.config['INDEX_PAGE_NAME']
-    query = {'slug': index_page_name, 'author': str(admin['_id'])}
+    query = {'slug': index_page_name, 'owner_id': admin['_id']}
     notebook = mongo.db.notebooks.find_one(query)
     if not notebook:
         user_info = get_user_info_from_token()
@@ -229,11 +229,11 @@ def notebook(slug):
             flash('You are not authorized to access this notebook.')
             return render_template('error.html', error=notebook['message'], is_author=False, **user_info)
         notebook['_id'] = str(notebook['_id'])
-        if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
+        if user_info['user_id'] and str(notebook['owner_id']) == str(user_info['user_id']):
             is_author = True
 
         # Fetch author's username
-        author = get_user_by_id(notebook['author'])
+        author = get_user_by_id(notebook['owner_id'])
         notebook['author_username'] = author['username'] if author else 'Unknown'
 
         return render_template('notebook.html', notebook=notebook_html(notebook['notebook']),id=notebook['_id'], is_author=is_author, **user_info)
@@ -252,11 +252,11 @@ def notebookid(id):
         return render_template('error.html', error="Unauthorized access.", is_author=False, **user_info)
     if notebook:
         notebook['_id'] = str(notebook['_id'])
-        if user_info['user_id'] and notebook['author'] == str(user_info['user_id']):
+        if user_info['user_id'] and str(notebook['owner_id']) == str(user_info['user_id']):
             is_author = True
 
         # Fetch author's username
-        author = get_user_by_id(notebook['author'])
+        author = get_user_by_id(notebook['owner_id'])
         notebook['author_username'] = author['username'] if author else 'Unknown'
 
         return render_template('notebook.html', notebook=notebook_html(notebook['notebook']), id=notebook['_id'],is_author=is_author, **user_info)

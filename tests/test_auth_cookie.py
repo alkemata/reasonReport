@@ -61,7 +61,7 @@ class AuthenticationCookieTest(unittest.TestCase):
     def test_index_uses_configured_admin_and_page(self):
         admin = {'_id': 'admin-id', 'username': 'site-owner', 'role': 'admin'}
         notebooks = MagicMock()
-        notebooks.find_one.return_value = {'slug': 'front-page', 'author': 'admin-id'}
+        notebooks.find_one.return_value = {'slug': 'front-page', 'owner_id': 'admin-id'}
         with (
             patch.object(
                 reasonreport_app, 'get_user_by_username', return_value=admin
@@ -78,7 +78,7 @@ class AuthenticationCookieTest(unittest.TestCase):
         self.assertEqual(response.location, '/slug/front-page')
         get_admin.assert_called_once_with('site-owner')
         notebooks.find_one.assert_called_once_with(
-            {'slug': 'front-page', 'author': 'admin-id'}
+            {'slug': 'front-page', 'owner_id': 'admin-id'}
         )
 
     def test_editor_redirects_anonymous_user_to_login(self):
