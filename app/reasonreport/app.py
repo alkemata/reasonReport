@@ -27,6 +27,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
 app.debug = Config.DEBUG
+app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
 limiter = Limiter(get_remote_address, app=app)
 
 # Initialize PyMongo
@@ -36,7 +37,6 @@ mongo.init_app(app)
 api = Api(app)
 if app.debug:
     toolbar = DebugToolbarExtension(app)
-    app.logger.setLevel(logging.DEBUG)
 
 
 @app.after_request
@@ -59,10 +59,6 @@ api.add_resource(EditorNotebookList, '/api/editor/notebooks')
 api.add_resource(EditorNotebookRead, '/api/editor/notebooks/<string:notebook_id>')
 api.add_resource(EditorNotebookQuery, '/api/editor/notebooks/query')
 api.add_resource(EditorAdminOverview, '/api/editor/admin/overview')
-
-# creation of logging file
-logging.basicConfig(filename='user_actions.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-
 
 # Function to handle token retrieval and user info extraction
 def get_user_info_from_token():
@@ -148,7 +144,7 @@ def login():
             flash(f"Welcome back, {username}. You have successfully logged in.", 'success')
             response = redirect(next_page)
             set_auth_cookie(response, token)
-            logging.info(f"User {request.form['username']} logged in")
+            app.logger.info("User %s logged in", username)
             return response
         else:
             flash("Login failed. Check your username and password and try again.", 'error')
@@ -187,7 +183,7 @@ def register():
             flash(f"Welcome, {username}. Your account was created successfully.", 'success')
             response = redirect(next_page)
             set_auth_cookie(response, token)
-            logging.info(f"User {username} registered and logged in")
+            app.logger.info("User %s registered and logged in", username)
             return response
         else:
             return render_template('error.html', error="Failed to create user.")
@@ -226,7 +222,7 @@ def create_fromtemplate(slugid):
 def logout():
     user_info = get_user_info_from_token()
     if user_info['is_authenticated']:
-        logging.info(f"User {user_info['username']} logged out")
+        app.logger.info("User %s logged out", user_info['username'])
     session.clear()
     response = make_response(redirect(url_for('login')))
     return clear_auth_cookie(response)
