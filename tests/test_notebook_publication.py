@@ -14,6 +14,7 @@ def publication_notebook(title):
     notebook = nbformat.v4.new_notebook()
     notebook.metadata['title'] = title
     notebook.cells = [
+        nbformat.v4.new_markdown_cell(title),
         nbformat.v4.new_markdown_cell('Ordinary user content'),
     ]
     return notebook
@@ -85,6 +86,21 @@ class NotebookPublicationTest(unittest.TestCase):
         self.assertEqual(document['title'], 'First Line')
         self.assertEqual(document['slug'], 'first-line')
 
+    def test_publication_reads_edited_first_line_before_placeholder_check(self):
+        notebook = publication_notebook('Updated in the editor')
+        notebook.metadata['title'] = models.DEFAULT_TITLE
+        notebooks = MagicMock()
+        notebooks.find_one.return_value = None
+        with patch.object(
+            models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
+        ):
+            document = models.build_notebook_document(
+                'user-id', 'Alice', {'notebook': notebook}
+            )
+
+        self.assertEqual(document['title'], 'Updated in the editor')
+        self.assertEqual(document['notebook'].metadata['title'], 'Updated in the editor')
+
     def test_publication_limits_slug_source_to_fifty_title_characters(self):
         title = 'A' * 45 + ' five words after the limit'
         notebooks = MagicMock()
@@ -103,10 +119,59 @@ class NotebookPublicationTest(unittest.TestCase):
         notebook = models.create_notebook_content('user-id', 'Alice')
 
         self.assertEqual(notebook.metadata['title'], models.DEFAULT_TITLE)
-        self.assertFalse(any(
-            cell.metadata.get('type') in {'author', 'date', 'title'}
-            for cell in notebook.cells
-        ))
+        self.assertEqual(notebook.cells[0].source, f'# {models.DEFAULT_TITLE}')
+
+    def test_create_notebook_generates_id_before_building_document(self):
+        notebooks = MagicMock()
+        with patch.object(
+            models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
+        ):
+            notebook_id = models.create_notebook('user-id', 'Alice')
+
+        document = notebooks.insert_one.call_args.args[0]
+        self.assertEqual(notebook_id, str(document['_id']))
+        self.assertEqual(document['slug'], f"notebook-{notebook_id}")
+
+    def test_private_publication_resolves_allowed_usernames(self):
+        reader_id = models.ObjectId()
+        notebooks = MagicMock()
+        notebooks.find_one.return_value = None
+        users = MagicMock()
+        users.find_one.return_value = {'_id': reader_id, 'username': 'Bob'}
+        database = SimpleNamespace(notebooks=notebooks, users=users)
+        with patch.object(models, 'mongo', SimpleNamespace(db=database)):
+            document = models.build_notebook_document(
+                'owner-id', 'Alice', {
+                    'notebook': publication_notebook('Shared privately'),
+                    'visibility': 'private',
+                    'allowed_users': [' Bob '],
+                }
+            )
+
+        self.assertEqual(document['visibility'], 'private')
+        self.assertEqual(document['allowed_user_ids'], [reader_id])
+        self.assertFalse(document['is_public'])
+        users.find_one.assert_called_once_with({'username_normalized': 'bob'})
+        self.assertTrue(models.check_authorization(document, str(reader_id)))
+        self.assertFalse(models.check_authorization(document, 'somebody-else'))
+
+    def test_private_publication_rejects_unknown_users(self):
+        notebooks = MagicMock()
+        notebooks.find_one.return_value = None
+        users = MagicMock()
+        users.find_one.return_value = None
+        database = SimpleNamespace(notebooks=notebooks, users=users)
+        with (
+            patch.object(models, 'mongo', SimpleNamespace(db=database)),
+            self.assertRaisesRegex(ValueError, 'Unknown users: nobody'),
+        ):
+            models.build_notebook_document(
+                'owner-id', 'Alice', {
+                    'notebook': publication_notebook('Private page'),
+                    'visibility': 'private',
+                    'allowed_users': ['nobody'],
+                }
+            )
 
     def test_create_notebook_generates_id_before_building_document(self):
         notebooks = MagicMock()

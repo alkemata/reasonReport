@@ -101,6 +101,8 @@ def create_notebook_content(author_id, author_name=None):
     nb.metadata['title'] = DEFAULT_TITLE
     cells = []
 
+    cells.append(nbformat.v4.new_markdown_cell(f"# {DEFAULT_TITLE}"))
+
     # Summary
     cells.append(nbformat.v4.new_markdown_cell("Summary:"))
     cells.append(nbformat.v4.new_markdown_cell(" Please enter here a short introduction for your article "))
@@ -119,12 +121,17 @@ def save_notebook(notebook_id, author_id, author_name, notebook_json):
     existing = mongo.db.notebooks.find_one({'_id': ObjectId(notebook_id)})
     if not existing:
         return "not_found"
+    notebook_json = dict(notebook_json)
+    notebook_json.setdefault('visibility', existing.get('visibility', 'public'))
+    notebook_json.setdefault('allowed_user_ids', existing.get('allowed_user_ids', []))
+    notebook_json.setdefault('topic_ids', existing.get('topic_ids', []))
     update_fields = build_notebook_document(
         author_id,
         author_name,
         notebook_json,
         notebook_id=notebook_id,
-        created_at=existing.get('created_at', existing.get('date'))
+        created_at=existing.get('created_at', existing.get('date')),
+        revision=existing.get('revision', 0) + 1,
     )
     mongo.db.notebooks.update_one(
         {'_id': ObjectId(notebook_id)},
@@ -142,13 +149,12 @@ def build_notebook_document(author_id, author_name, notebook_json,
         nbformat.validate(nb)
     except Exception as error:
         raise ValueError(f"Invalid notebook: {error}") from error
-    metadata = find_metadata_cells(nb)
-    if metadata == "error":
-        raise ValueError("Notebook requires a non-empty title in notebook metadata")
+    title = find_document_title(nb)
+    if not title:
+        raise ValueError("The document's first line must contain a title")
 
-    # Only the first line is the publication title.  Limit the input used for
-    # the URL so pasted headings cannot produce unwieldy slugs.
-    title = metadata['title'].splitlines()[0].strip().strip('#').strip()
+    # Check the placeholder only after reading the current first line from the
+    # edited notebook, then synchronize standard notebook metadata.
     if title.casefold() == DEFAULT_TITLE.casefold():
         raise ValueError(f'Title must be different from "{DEFAULT_TITLE}"')
     initial_slug = slugify(title[:SLUG_TITLE_MAX_LENGTH])
@@ -157,6 +163,13 @@ def build_notebook_document(author_id, author_name, notebook_json,
     slug = ensure_unique_slug(initial_slug, notebook_id)
     nb.metadata['title'] = title
     set_author_cell(nb, author_name)
+    visibility = notebook_json.get('visibility', 'public')
+    if visibility not in {'public', 'private'}:
+        raise ValueError("Visibility must be public or private")
+    allowed_user_ids = resolve_allowed_users(
+        notebook_json.get('allowed_users', notebook_json.get('allowed_user_ids', [])),
+        author_id,
+    ) if visibility == 'private' else []
     now = datetime.now(timezone.utc)
     return {
         'notebook': nb,
@@ -165,7 +178,11 @@ def build_notebook_document(author_id, author_name, notebook_json,
         'title': title,
         'created_at': created_at or now,
         'updated_at': now,
-        'is_public': True
+        'visibility': visibility,
+        'allowed_user_ids': allowed_user_ids,
+        'topic_ids': notebook_json.get('topic_ids', []),
+        'is_public': visibility == 'public',
+        'revision': revision,
     }
 
 
@@ -213,7 +230,12 @@ def check_authorization(notebook, user_id):
     The user must either be the author or the notebook must be public.
     """
     owner_id = notebook.get('owner_id', notebook.get('author'))
-    return str(owner_id) == str(user_id) or notebook.get('is_public', True) #TODO Check
+    visibility = notebook.get(
+        'visibility', 'public' if notebook.get('is_public', True) else 'private'
+    )
+    allowed_user_ids = {str(value) for value in notebook.get('allowed_user_ids', [])}
+    return (str(owner_id) == str(user_id) or visibility == 'public'
+            or str(user_id) in allowed_user_ids)
 
 def delete_notebook(notebook_id):
     mongo.db.notebooks.delete_one({'_id': ObjectId(notebook_id)})
@@ -293,3 +315,38 @@ def find_metadata_cells(notebook_data):
                 if title:
                     break
     return {'title': title} if title else "error"
+
+
+def find_document_title(notebook_data):
+    """Return the normalized first line of the first editable content cell."""
+    for cell in notebook_data.cells:
+        if cell.cell_type not in {'markdown', 'raw'}:
+            continue
+        if cell.metadata.get('type') in {'author', 'date'}:
+            continue
+        lines = str(cell.source).splitlines()
+        if lines and lines[0].strip() not in {'Author:', 'Date of creation:'}:
+            return lines[0].strip().strip('#').strip()
+    metadata_title = notebook_data.metadata.get('title', '')
+    return metadata_title.splitlines()[0].strip().strip('#').strip() \
+        if isinstance(metadata_title, str) and metadata_title else ''
+
+
+def resolve_allowed_users(values, owner_id):
+    """Resolve a private document's usernames (or existing IDs) to ObjectIds."""
+    if not isinstance(values, list):
+        raise ValueError("Allowed users must be a list of usernames")
+    resolved = []
+    unknown = []
+    for value in dict.fromkeys(str(item).strip() for item in values if str(item).strip()):
+        if ObjectId.is_valid(value):
+            user = mongo.db.users.find_one({'_id': ObjectId(value)})
+        else:
+            user = mongo.db.users.find_one({'username_normalized': value.casefold()})
+        if not user:
+            unknown.append(value)
+        elif str(user['_id']) != str(owner_id):
+            resolved.append(user['_id'])
+    if unknown:
+        raise ValueError(f"Unknown users: {', '.join(unknown)}")
+    return resolved

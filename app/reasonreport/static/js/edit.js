@@ -13,6 +13,10 @@
     let editorReady = false;
     let publishing = false;
     let closing = false;
+    const visibilitySelect = document.getElementById('document-visibility');
+    const allowedUsersInput = document.getElementById('allowed-users');
+    const allowedUsersLabel = document.getElementById('allowed-users-label');
+    const allowedUsersHelp = document.getElementById('allowed-users-help');
 
     if (!documentId || !editorUrl || !editorNonce) {
         window.alert('The notebook editor configuration is incomplete.');
@@ -27,6 +31,20 @@
             { source: 'reasonreport-parent', ...command },
             expectedOrigin
         );
+    }
+
+    function updateAccessControls() {
+        const isPrivate = visibilitySelect && visibilitySelect.value === 'private';
+        for (const element of [allowedUsersInput, allowedUsersLabel, allowedUsersHelp]) {
+            if (element) {
+                element.hidden = !isPrivate;
+            }
+        }
+    }
+
+    if (visibilitySelect) {
+        visibilitySelect.addEventListener('change', updateAccessControls);
+        updateAccessControls();
     }
 
     function requestId() {
@@ -87,7 +105,11 @@
             send({
                 msgtype: 'publish',
                 documentId,
-                requestId: requestId()
+                requestId: requestId(),
+                visibility: visibilitySelect ? visibilitySelect.value : 'private',
+                allowedUsers: allowedUsersInput
+                    ? allowedUsersInput.value.split(',').map(value => value.trim()).filter(Boolean)
+                    : []
             });
         });
 
@@ -123,6 +145,13 @@
             send({ msgtype: 'create', documentId, editorNonce });
         } else if (message.msgtype === 'loaded') {
             editorReady = true;
+            if (visibilitySelect && message.visibility) {
+                visibilitySelect.value = message.visibility;
+            }
+            if (allowedUsersInput && Array.isArray(message.allowedUsers)) {
+                allowedUsersInput.value = message.allowedUsers.join(', ');
+            }
+            updateAccessControls();
         } else if (message.msgtype === 'publish-result') {
             finishPublishing();
             const slug = await publishedSlug(message);

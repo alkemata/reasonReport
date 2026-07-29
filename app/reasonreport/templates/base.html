@@ -10,7 +10,8 @@
     <header>
         <nav>
             <a href="{{ url_for('index') }}">Home</a>
-            
+            {% block editor_controls %}{% endblock %}
+
             <div id="auth-buttons">
 
                 {% if is_authenticated %}
