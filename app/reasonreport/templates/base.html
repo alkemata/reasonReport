@@ -36,13 +36,22 @@
 
                 <a class="nav-button" id="logout-button" href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
-                <a class="nav-button" id="login-button" href="{{ url_for('login', next=request.path) }}">Login</a>
-                <a class="nav-button" id="register-button" href="{{ url_for('register') }}">Register</a>
+                <a class="nav-button" id="login-button" href="{{ url_for('login', next=request.full_path if request.query_string else request.path) }}">Login</a>
+                <a class="nav-button" id="register-button" href="{{ url_for('register', next=request.full_path if request.query_string else request.path) }}">Register</a>
                 {% endif %}
             </div>
         </nav>
     </header>
     <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages" aria-live="polite">
+                    {% for category, message in messages %}
+                        <div class="flash-message flash-{{ category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </main>
 </body>

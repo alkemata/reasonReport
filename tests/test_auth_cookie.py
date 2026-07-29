@@ -42,6 +42,28 @@ class AuthenticationCookieTest(unittest.TestCase):
         self.assertIn('HttpOnly', cookie)
         self.assertIn('SameSite=Strict', cookie)
         self.assertIn('Path=/', cookie)
+        with self.client.session_transaction() as session:
+            self.assertEqual(
+                session['_flashes'],
+                [('success', 'Welcome back, alice. You have successfully logged in.')],
+            )
+
+    def test_failed_login_displays_an_error_and_preserves_destination(self):
+        with patch.object(reasonreport_app, 'authenticate_user', return_value=None):
+            response = self.client.post('/login', data={
+                'username': 'alice',
+                'password': 'wrong-password',
+                'next': '/slug/article?view=full',
+            })
+
+        self.assertEqual(response.status_code, 401)
+        self.assertIn(
+            b'Login failed. Check your username and password and try again.',
+            response.data,
+        )
+        self.assertIn(
+            b'name="next" value="/slug/article?view=full"', response.data
+        )
 
     def test_login_form_preserves_requested_destination(self):
         response = self.client.get('/login?next=/create')
@@ -92,7 +114,7 @@ class AuthenticationCookieTest(unittest.TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.location, '/login?next=/edit/notebook-id')
 
-    def test_registration_logs_user_in_before_opening_editor(self):
+    def test_registration_logs_user_in_and_returns_to_previous_page(self):
         with (
             patch.object(reasonreport_app, 'get_user_by_username', return_value=None),
             patch.object(reasonreport_app, 'create_user', return_value='user-id'),
@@ -102,11 +124,17 @@ class AuthenticationCookieTest(unittest.TestCase):
             response = self.client.post('/register', data={
                 'username': 'alice',
                 'password': 'secret12',
+                'next': '/slug/article',
             })
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.location, '/edit/notebook-id')
+        self.assertEqual(response.location, '/slug/article')
         self.assertIn('jwt_token1=register-token', response.headers['Set-Cookie'])
+        with self.client.session_transaction() as session:
+            self.assertEqual(
+                session['_flashes'],
+                [('success', 'Welcome, alice. Your account was created successfully.')],
+            )
 
     def test_external_next_url_is_rejected(self):
         with patch.object(reasonreport_app, 'authenticate_user', return_value='token'):

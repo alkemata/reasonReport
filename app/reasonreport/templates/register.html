@@ -3,6 +3,7 @@
 {% block content %}
     <h2>Register</h2>
     <form id="register-form" action="{{ url_for('register') }}" method="POST">
+        <input type="hidden" name="next" value="{{ next_page }}">
         <label for="register-username">Username:</label>
         <input type="text" id="register-username" name="username" minlength="3" autocomplete="username" required>
         <br>
