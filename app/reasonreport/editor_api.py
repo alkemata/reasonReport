@@ -37,10 +37,9 @@ def _same_origin_request():
 def create_editor_session(user_id):
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
-    mongo.db.editor_sessions.create_index('delete_at', expireAfterSeconds=0)
     mongo.db.editor_sessions.insert_one({
         'token_digest': _digest(token),
-        'user_id': str(user_id),
+        'user_id': ObjectId(user_id),
         'expires_at': expires_at,
         'delete_at': expires_at + timedelta(hours=1),
     })
@@ -50,10 +49,9 @@ def create_editor_session(user_id):
 def create_editor_launch(user_id):
     nonce = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=LAUNCH_TTL_SECONDS)
-    mongo.db.editor_launches.create_index('expires_at', expireAfterSeconds=0)
     mongo.db.editor_launches.insert_one({
         'nonce_digest': _digest(nonce),
-        'user_id': str(user_id),
+        'user_id': ObjectId(user_id),
         'expires_at': expires_at,
     })
     return nonce
@@ -69,7 +67,7 @@ def editor_session_required(function):
             return {'message': 'Editor session token is missing'}, 401
         session = mongo.db.editor_sessions.find_one({
             'token_digest': _digest(token),
-            'user_id': request.user['id'],
+            'user_id': ObjectId(request.user['id']),
             'expires_at': {'$gt': datetime.now(timezone.utc)},
         })
         if not session:
@@ -114,13 +112,13 @@ class EditorSession(Resource):
         launch_nonce = payload.get('launch_nonce', '')
         launch = mongo.db.editor_launches.find_one_and_delete({
             'nonce_digest': _digest(launch_nonce),
-            'user_id': request.user['id'],
+            'user_id': ObjectId(request.user['id']),
             'expires_at': {'$gt': datetime.now(timezone.utc)},
         }) if launch_nonce else None
         renewal_token = request.headers.get(TOKEN_HEADER, '')
         renewal = mongo.db.editor_sessions.find_one({
             'token_digest': _digest(renewal_token),
-            'user_id': request.user['id'],
+            'user_id': ObjectId(request.user['id']),
             'expires_at': {'$gt': datetime.now(timezone.utc) - timedelta(hours=1)},
         }) if renewal_token else None
         if not launch and not renewal:

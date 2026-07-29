@@ -5,7 +5,7 @@ from bson.objectid import ObjectId
 from slugify import slugify
 import nbformat
 from nbconvert import HTMLExporter
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 mongo = PyMongo()
@@ -25,9 +25,12 @@ def create_user(username, password, landing_page=None, role='user', additional_f
     
     user = {
         'username': username,
+        'username_normalized': username.casefold(),
         'password': generate_password_hash(password),
         'landing_page': landing_page or None,
         'role': role,
+        'status': 'active',
+        'created_at': datetime.now(timezone.utc),
     }
     
     if additional_fields:
@@ -39,7 +42,7 @@ def create_user(username, password, landing_page=None, role='user', additional_f
     return str(result.inserted_id)
 
 def get_user_by_username(username):
-    return mongo.db.users.find_one({'username': username})
+    return mongo.db.users.find_one({'username_normalized': username.strip().casefold()})
 
 def get_user_by_id(user_id):
     if not ObjectId.is_valid(str(user_id)):
@@ -51,6 +54,8 @@ def update_user(user_id, update_fields):
         return False
     if 'role' in update_fields and update_fields['role'] not in USER_ROLES:
         raise ValueError(f"Role must be one of: {', '.join(sorted(USER_ROLES))}")
+    if 'username' in update_fields:
+        update_fields['username_normalized'] = update_fields['username'].strip().casefold()
     result = mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_fields})
     return result.matched_count > 0
 
@@ -72,13 +77,19 @@ def create_notebook(author_id, author_name=None):
     nb = create_notebook_content(author_id, author_name)
     now = datetime.utcnow()
     notebook = {
+        '_id': notebook_id,
         'notebook': nb,
         'owner_id': str(author_id),
         'created_at': now,
         'updated_at': now,
         'title': "",
-        'slug': "",
-        'is_public': False
+        'slug': f"notebook-{notebook_id}",
+        'created_at': now,
+        'updated_at': now,
+        'visibility': 'private',
+        'allowed_user_ids': [],
+        'topic_ids': [],
+        'revision': 1,
     }
     result = mongo.db.notebooks.insert_one(notebook)
     return str(result.inserted_id)
@@ -124,7 +135,7 @@ def save_notebook(notebook_id, author_id, author_name, notebook_json):
 
 
 def build_notebook_document(author_id, author_name, notebook_json,
-                            notebook_id=None, created_at=None):
+                            notebook_id=None, created_at=None, revision=1):
     """Validate notebook JSON and derive safe server-side publication fields."""
     raw_notebook = notebook_json.get('notebook', notebook_json)
     try:
