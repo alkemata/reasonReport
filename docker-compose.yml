@@ -41,6 +41,8 @@ services:
       - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
       - INDEX_PAGE_NAME=${INDEX_PAGE_NAME:-mainpage}
 
+  # Remote Streamable HTTP MCP server documented in MCP_SERVER.md.
+  # Use this exact service name with `docker-compose run --rm mcp ...`.
   mcp:
     build: .
     working_dir: /app
@@ -54,6 +56,7 @@ services:
     environment:
       - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongo:27017/flaskdb?authSource=admin
       - MCP_PUBLIC_URL=${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL, for example https://rr.example.com/mcp}
+      - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
       - MCP_TOKEN_PEPPER=${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
     labels:
       traefik.enable: true

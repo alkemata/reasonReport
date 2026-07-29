@@ -14,6 +14,7 @@ from .service import KnowledgeService
 mongo = MongoClient(os.environ["MONGO_URI"], serverSelectionTimeoutMS=5000)
 database = mongo.get_default_database()
 resource_url = os.environ["MCP_PUBLIC_URL"].rstrip("/")
+issuer_url = os.environ.get("MCP_ISSUER_URL") or resource_url
 pepper = os.environ["MCP_TOKEN_PEPPER"]
 service = KnowledgeService(database)
 verifier = MongoTokenVerifier(database, pepper)
@@ -26,7 +27,7 @@ mcp = FastMCP(
     json_response=True,
     token_verifier=verifier,
     auth=AuthSettings(
-        issuer_url=os.environ.get("MCP_ISSUER_URL", resource_url),
+        issuer_url=issuer_url,
         resource_server_url=resource_url,
         required_scopes=[],
     ),

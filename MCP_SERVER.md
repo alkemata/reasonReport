@@ -45,6 +45,19 @@ docker-compose run --rm flaskapprr python -c \
 docker-compose up -d
 ```
 
+The Compose service is named `mcp` and is declared directly in the repository's
+base `docker-compose.yml`; no additional override file is required. Confirm
+that your checked-out configuration contains it before deployment:
+
+```bash
+docker-compose config --services
+# expected output includes: mongo, flaskapprr, mcp
+docker-compose up -d mcp
+```
+
+If `mcp` is absent from that output, update the checkout containing
+`docker-compose.yml` before running the token-management commands below.
+
 Mongo authentication is initialized only for a fresh data volume. For an
 existing unauthenticated volume, follow MongoDB's documented access-control
 migration procedure before deploying this Compose change; do not delete the

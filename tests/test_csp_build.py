@@ -9,6 +9,12 @@ from scripts.externalize_inline_scripts import externalize
 
 
 class JupyterLiteCspBuildTest(unittest.TestCase):
+    def test_base_compose_declares_documented_mcp_service(self):
+        compose = Path('docker-compose.yml').read_text()
+        self.assertRegex(compose, r'(?m)^  mcp:\s*$')
+        self.assertIn('command: python -m reasonreport_mcp.server', compose)
+        self.assertIn('MCP_PUBLIC_URL=', compose)
+
     def test_development_compose_enables_both_reloaders(self):
         base_compose = Path('docker-compose.yml').read_text()
         compose = Path('docker-compose.dev.yml').read_text()
