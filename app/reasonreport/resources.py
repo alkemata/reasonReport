@@ -198,6 +198,13 @@ class NotebookQuery(Resource):
         return {
             'notebook': notebook['notebook'],
             'slug': notebook.get('slug', ''),
+            'visibility': notebook.get(
+                'visibility', 'public' if notebook.get('is_public', True) else 'private'
+            ),
+            'allowed_users': [
+                user['username'] for user_id in notebook.get('allowed_user_ids', [])
+                if (user := get_user_by_id(user_id))
+            ],
         }, 200
 
 class NotebookDelete(Resource):

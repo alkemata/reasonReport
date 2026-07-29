@@ -1,5 +1,20 @@
 {% extends "base.html" %}
 
+{% block editor_controls %}
+<section class="publication-access" aria-label="Document access settings">
+    <label for="document-visibility">Access</label>
+    <select id="document-visibility">
+        <option value="public">Public</option>
+        <option value="private" selected>Private</option>
+    </select>
+    <label id="allowed-users-label" for="allowed-users">Readers</label>
+    <input id="allowed-users" type="text" autocomplete="off"
+           placeholder="Usernames separated by commas"
+           aria-describedby="allowed-users-help">
+    <small id="allowed-users-help">Private documents are visible to these users and you.</small>
+</section>
+{% endblock %}
+
 {% block content %}
 <div>
     <iframe

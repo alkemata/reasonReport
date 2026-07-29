@@ -97,6 +97,15 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         reset = editor_script.index('finishPublishing();', publish_result)
         self.assertLess(reset, missing_slug)
 
+    def test_editor_exposes_publication_access_controls(self):
+        template = Path('app/reasonreport/templates/edit.html').read_text()
+        editor_script = Path('app/reasonreport/static/js/edit.js').read_text()
+
+        self.assertIn('id="document-visibility"', template)
+        self.assertIn('id="allowed-users"', template)
+        self.assertIn("visibility: visibilitySelect", editor_script)
+        self.assertIn('allowedUsers: allowedUsersInput', editor_script)
+
     def test_editor_requests_storage_cleanup_when_closed(self):
         editor_script = Path('app/reasonreport/static/js/edit.js').read_text()
         extension = Path('flask_extension/src/index.ts').read_text()

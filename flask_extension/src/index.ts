@@ -4,7 +4,13 @@ import { INotebookTracker } from '@jupyterlab/notebook';
 
 type ParentCommand =
   | { msgtype: 'create'; documentId: string; editorNonce: string }
-  | { msgtype: 'publish'; documentId: string; requestId?: string }
+  | {
+      msgtype: 'publish';
+      documentId: string;
+      requestId?: string;
+      visibility: 'public' | 'private';
+      allowedUsers: string[];
+    }
   | { msgtype: 'cleanup'; documentId: string };
 
 interface BridgeResponse {
@@ -14,6 +20,8 @@ interface BridgeResponse {
   documentId?: string;
   slug?: string;
   message?: string;
+  visibility?: 'public' | 'private';
+  allowedUsers?: string[];
 }
 
 interface NotebookPayload {
@@ -46,11 +54,17 @@ function isCommand(value: unknown): value is ParentCommand {
     command.msgtype === 'publish' ||
     command.msgtype === 'cleanup';
   const validNonce = command.msgtype !== 'create' || typeof command.editorNonce === 'string';
+  const validAccess =
+    command.msgtype !== 'publish' ||
+    ((command.visibility === 'public' || command.visibility === 'private') &&
+      Array.isArray(command.allowedUsers) &&
+      command.allowedUsers.every(user => typeof user === 'string'));
   return (
     command.source === SOURCE &&
     typeof command.documentId === 'string' &&
     validType &&
-    validNonce
+    validNonce &&
+    validAccess
   );
 }
 
@@ -117,7 +131,9 @@ async function openNotebook(
   sendToParent({
     source: 'reasonreport-jupyterlite',
     msgtype: 'loaded',
-    documentId
+    documentId,
+    visibility: payload.visibility === 'public' ? 'public' : 'private',
+    allowedUsers: Array.isArray(payload.allowed_users) ? payload.allowed_users : []
   });
 }
 
@@ -140,7 +156,9 @@ async function publishNotebook(
   documentId: string,
   requestId: string | undefined,
   tracker: INotebookTracker,
-  documentManager: IDocumentManager
+  documentManager: IDocumentManager,
+  visibility: 'public' | 'private',
+  allowedUsers: string[]
 ): Promise<void> {
   const panel = tracker.currentWidget;
   if (!panel) {
@@ -159,7 +177,7 @@ async function publishNotebook(
     : `/api/notebooks/save/${encodeURIComponent(documentId)}`;
   const payload = await requestJSON(url, {
     method: isNew ? 'POST' : 'PUT',
-    body: JSON.stringify({ notebook })
+    body: JSON.stringify({ notebook, visibility, allowed_users: allowedUsers })
   });
   if (typeof payload.slug !== 'string' || !payload.slug) {
     throw new Error(
@@ -207,7 +225,9 @@ const plugin: JupyterFrontEndPlugin<void> = {
             command.documentId,
             command.requestId,
             tracker,
-            documentManager
+            documentManager,
+            command.visibility,
+            command.allowedUsers
           );
         } else {
           operation = clearEditorStorage(documentManager).then(() => {

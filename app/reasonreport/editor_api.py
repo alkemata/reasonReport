@@ -81,6 +81,8 @@ def _access_filter(user_id):
         {'owner_id': str(user_id)},
         # Read compatibility until every legacy document has been saved.
         {'author': str(user_id)},
+        {'visibility': 'public'},
+        {'allowed_user_ids': ObjectId(user_id)},
         {'is_public': True},
     ]}
 

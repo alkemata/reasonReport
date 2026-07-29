@@ -96,3 +96,31 @@ iframe {
     padding: 5px 10px;
     text-decoration: none;
 }
+
+.publication-access {
+    align-items: center;
+    background: #f5fbf7;
+    border: 1px solid #9fc9aa;
+    border-radius: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 12px;
+    padding: 6px 10px;
+}
+
+.publication-access select,
+.publication-access input {
+    border: 1px solid #789b82;
+    border-radius: 4px;
+    font: inherit;
+    padding: 6px 8px;
+}
+
+.publication-access input {
+    min-width: 260px;
+}
+
+.publication-access small {
+    color: #46634e;
+}
