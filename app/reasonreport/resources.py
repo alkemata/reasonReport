@@ -160,7 +160,7 @@ class NotebookSave(Resource):
             return {'message': 'Notebook not found'}, 404
         if notebook.get('message') == 'not_authorized':
             return {'message': 'Unauthorized access to this notebook'}, 403
-        if notebook['author'] != request.user['id']:
+        if str(notebook['owner_id']) != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
         try:
             slug = save_notebook(
@@ -191,7 +191,7 @@ class NotebookQuery(Resource):
         if notebook.get('message') == 'not_authorized':
             return {'message': 'Unauthorized access to this notebook'}, 403
         #notebook['date']=notebook['date'].isoformat()
-        if notebook['author'] != request.user['id']:
+        if str(notebook['owner_id']) != request.user['id']:
             return {'message': 'Unauthorized access to this notebook'}, 403
         
         notebook['_id'] = str(notebook['_id'])
@@ -208,7 +208,7 @@ class NotebookDelete(Resource):
             return {'message': 'Notebook not found'}, 404
         if notebook.get('message') == 'not_authorized':
             return {'message': 'Unauthorized'}, 403
-        if notebook['author'] != request.user['id']:
+        if str(notebook['owner_id']) != request.user['id']:
             return {'message': 'Unauthorized'}, 403
         
         delete_notebook(notebook_id)

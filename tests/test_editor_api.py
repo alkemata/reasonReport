@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from bson import ObjectId
+
 sys.path.insert(0, str(Path('app/reasonreport').resolve()))
 import app as reasonreport_app  # noqa: E402
 import editor_api  # noqa: E402
@@ -16,8 +18,8 @@ class EditorApiSecurityTest(unittest.TestCase):
     def setUp(self):
         reasonreport_app.app.config.update(TESTING=True)
         self.client = reasonreport_app.app.test_client()
-        self.user = {'_id': 'user-id', 'username': 'alice'}
-        self.token = generate_token('user-id')
+        self.user = {'_id': '507f1f77bcf86cd799439011', 'username': 'alice'}
+        self.token = generate_token('507f1f77bcf86cd799439011')
         self.sessions = MagicMock()
         self.launches = MagicMock()
         self.launches.find_one_and_delete.return_value = None
@@ -55,7 +57,7 @@ class EditorApiSecurityTest(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_session_is_short_lived_and_stored_hashed(self):
-        self.launches.find_one_and_delete.return_value = {'user_id': 'user-id'}
+        self.launches.find_one_and_delete.return_value = {'user_id': '507f1f77bcf86cd799439011'}
         response = self.client.post(
             '/api/editor/session',
             headers=self.headers(),
@@ -82,7 +84,7 @@ class EditorApiSecurityTest(unittest.TestCase):
         self.assertEqual(response.status_code, 403)
 
     def test_query_rejects_mongodb_operators(self):
-        self.sessions.find_one.return_value = {'user_id': 'user-id'}
+        self.sessions.find_one.return_value = {'user_id': '507f1f77bcf86cd799439011'}
         response = self.client.post(
             '/api/editor/notebooks/query',
             headers=self.headers(),
@@ -96,11 +98,11 @@ class EditorApiSecurityTest(unittest.TestCase):
         response = self.client.get('/api/editor/notebooks', headers=self.headers())
         self.assertEqual(response.status_code, 401)
         query = self.sessions.find_one.call_args.args[0]
-        self.assertEqual(query['user_id'], 'user-id')
+        self.assertEqual(query['user_id'], ObjectId('507f1f77bcf86cd799439011'))
         self.assertIn('expires_at', query)
 
     def test_admin_overview_is_restricted_to_admin(self):
-        self.sessions.find_one.return_value = {'user_id': 'user-id'}
+        self.sessions.find_one.return_value = {'user_id': '507f1f77bcf86cd799439011'}
         response = self.client.get('/api/editor/admin/overview', headers=self.headers())
 
         self.assertEqual(response.status_code, 403)
@@ -109,12 +111,12 @@ class EditorApiSecurityTest(unittest.TestCase):
     def test_admin_overview_returns_user_and_document_summary(self):
         self.user['username'] = 'admin'
         self.user['role'] = 'admin'
-        self.sessions.find_one.return_value = {'user_id': 'user-id'}
+        self.sessions.find_one.return_value = {'user_id': '507f1f77bcf86cd799439011'}
         cursor = MagicMock()
         cursor.sort.return_value.limit.return_value.__iter__.return_value = iter([{
             'title': 'Recent page',
             'slug': 'recent-page',
-            'author': '507f1f77bcf86cd799439011',
+            'owner_id': ObjectId('507f1f77bcf86cd799439011'),
         }])
         self.notebooks.find.return_value = cursor
         self.users.find.return_value = [{

@@ -17,7 +17,7 @@ SESSION_TTL_SECONDS = 900
 LAUNCH_TTL_SECONDS = 60
 EDITOR_HEADER = 'X-ReasonReport-Editor'
 TOKEN_HEADER = 'X-ReasonReport-Editor-Token'
-QUERY_FIELDS = {'_id', 'title', 'slug', 'author', 'is_public'}
+QUERY_FIELDS = {'_id', 'title', 'slug', 'owner_id', 'visibility'}
 
 
 def _digest(token):
@@ -37,10 +37,9 @@ def _same_origin_request():
 def create_editor_session(user_id):
     token = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=SESSION_TTL_SECONDS)
-    mongo.db.editor_sessions.create_index('delete_at', expireAfterSeconds=0)
     mongo.db.editor_sessions.insert_one({
         'token_digest': _digest(token),
-        'user_id': str(user_id),
+        'user_id': ObjectId(user_id),
         'expires_at': expires_at,
         'delete_at': expires_at + timedelta(hours=1),
     })
@@ -50,10 +49,9 @@ def create_editor_session(user_id):
 def create_editor_launch(user_id):
     nonce = secrets.token_urlsafe(32)
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=LAUNCH_TTL_SECONDS)
-    mongo.db.editor_launches.create_index('expires_at', expireAfterSeconds=0)
     mongo.db.editor_launches.insert_one({
         'nonce_digest': _digest(nonce),
-        'user_id': str(user_id),
+        'user_id': ObjectId(user_id),
         'expires_at': expires_at,
     })
     return nonce
@@ -69,7 +67,7 @@ def editor_session_required(function):
             return {'message': 'Editor session token is missing'}, 401
         session = mongo.db.editor_sessions.find_one({
             'token_digest': _digest(token),
-            'user_id': request.user['id'],
+            'user_id': ObjectId(request.user['id']),
             'expires_at': {'$gt': datetime.now(timezone.utc)},
         })
         if not session:
@@ -79,18 +77,18 @@ def editor_session_required(function):
 
 
 def _access_filter(user_id):
-    return {'$or': [{'author': str(user_id)}, {'is_public': True}]}
+    return {'$or': [{'owner_id': ObjectId(user_id)}, {'visibility': 'public'}]}
 
 
 def _summary(document):
-    date = document.get('date')
+    date = document.get('updated_at')
     return {
         'id': str(document['_id']),
         'title': document.get('title', ''),
         'slug': document.get('slug', ''),
-        'author': document.get('author'),
+        'owner_id': str(document.get('owner_id')),
         'date': date.isoformat() if hasattr(date, 'isoformat') else date,
-        'is_public': bool(document.get('is_public', False)),
+        'visibility': document.get('visibility', 'private'),
     }
 
 
@@ -103,13 +101,13 @@ class EditorSession(Resource):
         launch_nonce = payload.get('launch_nonce', '')
         launch = mongo.db.editor_launches.find_one_and_delete({
             'nonce_digest': _digest(launch_nonce),
-            'user_id': request.user['id'],
+            'user_id': ObjectId(request.user['id']),
             'expires_at': {'$gt': datetime.now(timezone.utc)},
         }) if launch_nonce else None
         renewal_token = request.headers.get(TOKEN_HEADER, '')
         renewal = mongo.db.editor_sessions.find_one({
             'token_digest': _digest(renewal_token),
-            'user_id': request.user['id'],
+            'user_id': ObjectId(request.user['id']),
             'expires_at': {'$gt': datetime.now(timezone.utc) - timedelta(hours=1)},
         }) if renewal_token else None
         if not launch and not renewal:
@@ -123,7 +121,7 @@ class EditorNotebookList(Resource):
     @editor_session_required
     def get(self):
         limit = min(max(request.args.get('limit', 50, type=int), 1), 100)
-        documents = mongo.db.notebooks.find(_access_filter(request.user['id'])).sort('date', -1).limit(limit)
+        documents = mongo.db.notebooks.find(_access_filter(request.user['id'])).sort('updated_at', -1).limit(limit)
         return {'documents': [_summary(document) for document in documents]}, 200
 
 
@@ -164,7 +162,7 @@ class EditorNotebookQuery(Resource):
         if not isinstance(limit, int):
             return {'message': 'Limit must be an integer'}, 400
         limit = min(max(limit, 1), 100)
-        documents = mongo.db.notebooks.find({'$and': [query, _access_filter(request.user['id'])]}).sort('date', -1).limit(limit)
+        documents = mongo.db.notebooks.find({'$and': [query, _access_filter(request.user['id'])]}).sort('updated_at', -1).limit(limit)
         return {'documents': [_summary(document) for document in documents]}, 200
 
 
@@ -175,8 +173,8 @@ class EditorAdminOverview(Resource):
         if request.user.get('role') != 'admin':
             return {'message': 'Administrator access required'}, 403
 
-        documents = list(mongo.db.notebooks.find({}).sort('date', -1).limit(10))
-        author_ids = {document.get('author') for document in documents}
+        documents = list(mongo.db.notebooks.find({}).sort('updated_at', -1).limit(10))
+        author_ids = {document.get('owner_id') for document in documents}
         author_ids.discard(None)
         authors = {
             str(user['_id']): user.get('username', 'Unknown')
@@ -190,6 +188,6 @@ class EditorAdminOverview(Resource):
             'documents': [{
                 'title': document.get('title', ''),
                 'slug': document.get('slug', ''),
-                'author': authors.get(str(document.get('author')), 'Unknown'),
+                'author': authors.get(str(document.get('owner_id')), 'Unknown'),
             } for document in documents],
         }, 200

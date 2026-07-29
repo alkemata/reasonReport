@@ -5,7 +5,7 @@ from bson.objectid import ObjectId
 from slugify import slugify
 import nbformat
 from nbconvert import HTMLExporter
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 mongo = PyMongo()
@@ -25,9 +25,12 @@ def create_user(username, password, landing_page=None, role='user', additional_f
     
     user = {
         'username': username,
+        'username_normalized': username.casefold(),
         'password': generate_password_hash(password),
         'landing_page': landing_page or None,
         'role': role,
+        'status': 'active',
+        'created_at': datetime.now(timezone.utc),
     }
     
     if additional_fields:
@@ -39,7 +42,7 @@ def create_user(username, password, landing_page=None, role='user', additional_f
     return str(result.inserted_id)
 
 def get_user_by_username(username):
-    return mongo.db.users.find_one({'username': username})
+    return mongo.db.users.find_one({'username_normalized': username.strip().casefold()})
 
 def get_user_by_id(user_id):
     if not ObjectId.is_valid(str(user_id)):
@@ -51,6 +54,8 @@ def update_user(user_id, update_fields):
         return False
     if 'role' in update_fields and update_fields['role'] not in USER_ROLES:
         raise ValueError(f"Role must be one of: {', '.join(sorted(USER_ROLES))}")
+    if 'username' in update_fields:
+        update_fields['username_normalized'] = update_fields['username'].strip().casefold()
     result = mongo.db.users.update_one({'_id': ObjectId(user_id)}, {'$set': update_fields})
     return result.matched_count > 0
 
@@ -58,7 +63,7 @@ def delete_user(user_id):
     if not ObjectId.is_valid(str(user_id)):
         return False
     result = mongo.db.users.delete_one({'_id': ObjectId(user_id)})
-    mongo.db.notebooks.delete_many({'author': str(user_id)})
+    mongo.db.notebooks.delete_many({'owner_id': ObjectId(user_id)})
     return result.deleted_count > 0
 
 
@@ -68,13 +73,20 @@ DEFAULT_TITLE = "Please enter the title here"
 
 def create_notebook(author_id, author_name=None):
     nb = create_notebook_content(author_id, author_name)
+    now = datetime.now(timezone.utc)
+    notebook_id = ObjectId()
     notebook = {
+        '_id': notebook_id,
         'notebook': nb,
-        'author': author_id,
-        'date': datetime.utcnow(),
+        'owner_id': ObjectId(author_id),
         'title': "",
-        'slug': "",
-        'is_public': False
+        'slug': f"notebook-{notebook_id}",
+        'created_at': now,
+        'updated_at': now,
+        'visibility': 'private',
+        'allowed_user_ids': [],
+        'topic_ids': [],
+        'revision': 1,
     }
     result = mongo.db.notebooks.insert_one(notebook)
     return str(result.inserted_id)
@@ -125,14 +137,15 @@ def save_notebook(notebook_id, author_id, author_name, notebook_json):
         author_name,
         notebook_json,
         notebook_id=notebook_id,
-        created_at=existing.get('date')
+        created_at=existing.get('created_at'),
+        revision=existing.get('revision', 1) + 1,
     )
     mongo.db.notebooks.update_one({'_id': ObjectId(notebook_id)}, {'$set': update_fields})
     return update_fields['slug']
 
 
 def build_notebook_document(author_id, author_name, notebook_json,
-                            notebook_id=None, created_at=None):
+                            notebook_id=None, created_at=None, revision=1):
     """Validate notebook JSON and derive safe server-side publication fields."""
     raw_notebook = notebook_json.get('notebook', notebook_json)
     try:
@@ -152,13 +165,18 @@ def build_notebook_document(author_id, author_name, notebook_json,
         raise ValueError("Notebook title must produce a valid slug")
     slug = ensure_unique_slug(initial_slug, notebook_id)
     set_author_cell(nb, author_name)
+    now = datetime.now(timezone.utc)
     return {
         'notebook': nb,
-        'author': str(author_id),
+        'owner_id': ObjectId(author_id),
         'slug': slug,
         'title': title,
-        'date': created_at or datetime.utcnow(),
-        'is_public': True
+        'created_at': created_at or now,
+        'updated_at': now,
+        'visibility': 'public',
+        'allowed_user_ids': [],
+        'topic_ids': [],
+        'revision': revision,
     }
 
 
@@ -191,7 +209,14 @@ def check_authorization(notebook, user_id):
     Check if a user is authorized to access a notebook.
     The user must either be the author or the notebook must be public.
     """
-    return notebook['author'] == str(user_id) or notebook.get('is_public', True) #TODO Check
+    owner_id = notebook.get('owner_id')
+    return (
+        (user_id is not None and str(owner_id) == str(user_id))
+        or notebook.get('visibility', 'private') == 'public'
+        or (user_id is not None and any(
+            str(value) == str(user_id) for value in notebook.get('allowed_user_ids', [])
+        ))
+    )
 
 def delete_notebook(notebook_id):
     mongo.db.notebooks.delete_one({'_id': ObjectId(notebook_id)})
