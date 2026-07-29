@@ -17,7 +17,7 @@ SESSION_TTL_SECONDS = 900
 LAUNCH_TTL_SECONDS = 60
 EDITOR_HEADER = 'X-ReasonReport-Editor'
 TOKEN_HEADER = 'X-ReasonReport-Editor-Token'
-QUERY_FIELDS = {'_id', 'title', 'slug', 'owner_id', 'visibility'}
+QUERY_FIELDS = {'_id', 'title', 'slug', 'owner_id', 'is_public'}
 
 
 def _digest(token):
@@ -77,18 +77,29 @@ def editor_session_required(function):
 
 
 def _access_filter(user_id):
-    return {'$or': [{'owner_id': ObjectId(user_id)}, {'visibility': 'public'}]}
+    return {'$or': [
+        {'owner_id': str(user_id)},
+        # Read compatibility until every legacy document has been saved.
+        {'author': str(user_id)},
+        {'is_public': True},
+    ]}
 
 
 def _summary(document):
-    date = document.get('updated_at')
+    owner_id = str(document.get('owner_id', document.get('author', '')))
+    owner = (mongo.db.users.find_one({'_id': ObjectId(owner_id)})
+             if ObjectId.is_valid(owner_id) else None)
+    created_at = document.get('created_at', document.get('date'))
+    updated_at = document.get('updated_at', created_at)
     return {
         'id': str(document['_id']),
         'title': document.get('title', ''),
         'slug': document.get('slug', ''),
-        'owner_id': str(document.get('owner_id')),
-        'date': date.isoformat() if hasattr(date, 'isoformat') else date,
-        'visibility': document.get('visibility', 'private'),
+        'owner_id': owner_id,
+        'author': owner.get('username', 'Unknown') if owner else 'Unknown',
+        'created_at': created_at.isoformat() if hasattr(created_at, 'isoformat') else created_at,
+        'updated_at': updated_at.isoformat() if hasattr(updated_at, 'isoformat') else updated_at,
+        'is_public': bool(document.get('is_public', False)),
     }
 
 
@@ -174,7 +185,9 @@ class EditorAdminOverview(Resource):
             return {'message': 'Administrator access required'}, 403
 
         documents = list(mongo.db.notebooks.find({}).sort('updated_at', -1).limit(10))
-        author_ids = {document.get('owner_id') for document in documents}
+        author_ids = {
+            document.get('owner_id', document.get('author')) for document in documents
+        }
         author_ids.discard(None)
         authors = {
             str(user['_id']): user.get('username', 'Unknown')
@@ -188,6 +201,6 @@ class EditorAdminOverview(Resource):
             'documents': [{
                 'title': document.get('title', ''),
                 'slug': document.get('slug', ''),
-                'author': authors.get(str(document.get('owner_id')), 'Unknown'),
+                'author': authors.get(str(document.get('owner_id', document.get('author'))), 'Unknown'),
             } for document in documents],
         }, 200
