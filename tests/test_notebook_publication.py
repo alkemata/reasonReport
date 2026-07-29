@@ -173,6 +173,17 @@ class NotebookPublicationTest(unittest.TestCase):
                 }
             )
 
+    def test_create_notebook_generates_id_before_building_document(self):
+        notebooks = MagicMock()
+        with patch.object(
+            models, 'mongo', SimpleNamespace(db=SimpleNamespace(notebooks=notebooks))
+        ):
+            notebook_id = models.create_notebook('user-id', 'Alice')
+
+        document = notebooks.insert_one.call_args.args[0]
+        self.assertEqual(notebook_id, str(document['_id']))
+        self.assertEqual(document['slug'], f"notebook-{notebook_id}")
+
     def test_legacy_author_and_date_cells_are_removed_without_user_content_loss(self):
         notebook = nbformat.v4.new_notebook(metadata={'title': 'Migrated Page'})
         notebook.cells = [
