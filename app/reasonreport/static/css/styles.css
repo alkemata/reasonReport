@@ -33,6 +33,25 @@ main {
     padding: 20px;
 }
 
+.flash-message {
+    border: 1px solid;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    padding: 12px 16px;
+}
+
+.flash-success {
+    background: #e7f7ec;
+    border-color: #6cac7c;
+    color: #145c2e;
+}
+
+.flash-error {
+    background: #fdebec;
+    border-color: #d8787e;
+    color: #8a1f27;
+}
+
 iframe {
     border: 1px solid #ccc;
 }
