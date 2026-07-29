@@ -27,6 +27,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 app.secret_key = Config.SECRET_KEY
 app.debug = Config.DEBUG
+app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
 limiter = Limiter(get_remote_address, app=app)
 
 # Initialize PyMongo
@@ -36,7 +37,6 @@ mongo.init_app(app)
 api = Api(app)
 if app.debug:
     toolbar = DebugToolbarExtension(app)
-    app.logger.setLevel(logging.DEBUG)
 
 
 @app.after_request
@@ -59,10 +59,6 @@ api.add_resource(EditorNotebookList, '/api/editor/notebooks')
 api.add_resource(EditorNotebookRead, '/api/editor/notebooks/<string:notebook_id>')
 api.add_resource(EditorNotebookQuery, '/api/editor/notebooks/query')
 api.add_resource(EditorAdminOverview, '/api/editor/admin/overview')
-
-# creation of logging file
-logging.basicConfig(filename='user_actions.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-
 
 # Function to handle token retrieval and user info extraction
 def get_user_info_from_token():
@@ -103,7 +99,8 @@ def safe_local_url(candidate, fallback='/'):
     return path + (f'?{parsed.query}' if parsed.query else '')
 
 
-def login_return_url():
+def auth_return_url():
+    """Return the page that opened an authentication form."""
     requested = request.form.get('next') or request.args.get('next')
     if requested:
         return safe_local_url(requested)
@@ -136,7 +133,7 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    next_page = login_return_url()
+    next_page = auth_return_url()
     if request.method == 'GET' and get_user_info_from_token()['is_authenticated']:
         return redirect(next_page)
     if request.method == 'POST':
@@ -144,31 +141,37 @@ def login():
         password = request.form.get('password', '')
         token = authenticate_user(username, password)
         if token:
+            flash(f"Welcome back, {username}. You have successfully logged in.", 'success')
             response = redirect(next_page)
             set_auth_cookie(response, token)
-            logging.info(f"User {request.form['username']} logged in")
+            app.logger.info("User %s logged in", username)
             return response
         else:
-            flash("Invalid credentials, please try again.")
+            flash("Login failed. Check your username and password and try again.", 'error')
+            return render_template('login.html', next_page=next_page), 401
     return render_template('login.html', next_page=next_page)
 
 @app.route('/register', methods=['GET', 'POST'])
 @limiter.limit("5 per minute")
 def register():
+    next_page = auth_return_url()
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         if len(username) < 3 or len(password) < 8:
             return render_template(
                 'register.html',
-                error_message='Username must be at least 3 characters and password at least 8 characters.'
+                error_message='Username must be at least 3 characters and password at least 8 characters.',
+                next_page=next_page,
             ), 400
         
         # Check if user already exists
         if get_user_by_username(username):
             # User exists, render the registration form with an error message
             error_message = "Username already exists. Please choose a different username."
-            return render_template('register.html', error_message=error_message)
+            return render_template(
+                'register.html', error_message=error_message, next_page=next_page
+            )
         
         # Create user and associated notebook
         role = 'admin' if username == app.config['ADMIN_USERNAME'] else 'user'
@@ -177,14 +180,15 @@ def register():
             # Create a notebook and authenticate the new user immediately.
             notebook_id = create_notebook(user_id, username)
             token = generate_token(user_id)
-            response = redirect(url_for('edit_notebook', identifier=notebook_id))
+            flash(f"Welcome, {username}. Your account was created successfully.", 'success')
+            response = redirect(next_page)
             set_auth_cookie(response, token)
-            logging.info(f"User {username} registered and logged in")
+            app.logger.info("User %s registered and logged in", username)
             return response
         else:
             return render_template('error.html', error="Failed to create user.")
     else:
-        return render_template('register.html')
+        return render_template('register.html', next_page=next_page)
 
 @app.route('/create')
 def create():
@@ -218,7 +222,7 @@ def create_fromtemplate(slugid):
 def logout():
     user_info = get_user_info_from_token()
     if user_info['is_authenticated']:
-        logging.info(f"User {user_info['username']} logged out")
+        app.logger.info("User %s logged out", user_info['username'])
     session.clear()
     response = make_response(redirect(url_for('login')))
     return clear_auth_cookie(response)

@@ -34,7 +34,11 @@ documents authored by that user.
 ./scripts/list_documents.sh
 ./scripts/delete_user.sh USERNAME
 ./scripts/delete_document.sh DOCUMENT_ID
+./scripts/delete_all_users.sh --yes
 ```
+
+`delete_all_users.sh` permanently removes every user and notebook. The required
+`--yes` argument prevents accidental deletion.
 
 Use `list_documents.sh` to obtain a document's MongoDB `_id` before deleting
 it. These destructive commands cannot be undone, so back up the database first.

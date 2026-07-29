@@ -339,11 +339,14 @@ the Compose MongoDB container:
 ./scripts/list_documents.sh
 ./scripts/delete_user.sh USERNAME
 ./scripts/delete_document.sh DOCUMENT_ID
+./scripts/delete_all_users.sh --yes
 ```
 
 `delete_user.sh` removes the selected user and all of their documents;
+`delete_all_users.sh` permanently removes every user and notebook and requires
+the explicit `--yes` argument;
 `delete_document.sh` accepts the `_id` printed by `list_documents.sh`. Back up
-MongoDB before using either deletion command.
+MongoDB before using any deletion command.
 
 Verify login, the current-user endpoint, and logout with a cookie jar:
 
