@@ -92,6 +92,14 @@ JWT_COOKIE_SECURE=true
 
 Never commit real production secrets.
 
+The default MongoDB URI is intentionally credential-free for compatibility
+with existing Compose volumes. MongoDB is not published to the host and is
+available only on the private Compose network. If you have created a MongoDB
+user, replace `MONGO_URI` with its authenticated URI. Do not merely add
+`MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` to an existing
+non-empty volume: the official Mongo image only creates that root user while
+initializing a new database directory.
+
 ## 5. Prepare MongoDB storage
 
 The Compose stack stores `/data/db` in its managed `mongo-data` Docker volume.
@@ -145,8 +153,10 @@ did not describe this standalone extension package.
 
 The build downloads Python and JavaScript packages, compiles
 `flask_extension/src/index.ts`, installs the resulting federated extension, and
-runs `jupyter lite build`. Internet access to PyPI and the Yarn/npm registries is
-therefore required during this step.
+runs `jupyter lite build`. Internet access to PyPI, GitHub Releases, and the
+Yarn/npm registries is therefore required during this step. The Pyodide download
+is a separate, retried image layer, so a CDN failure is reported directly and a
+successful download is reused by subsequent builds.
 
 The build also seeds the JupyterLite contents service from
 `jupyterlite-content/` and verifies that `api/contents/all.json` exists. It
@@ -154,7 +164,7 @@ downloads Pyodide 0.27.6 while building the image and serves the runtime from
 `/jupyterlite/static/pyodide/`. Browsers therefore do not need to connect to an
 external CDN for the Python runtime.
 The pure-Python `comm` dependency is also downloaded at image-build time and
-added to JupyterLite's local piplite index. The piplite/micropip resolver can
+added to JupyterLite's local `/pypi/all.json` index. The piplite/micropip resolver can
 still consult PyPI while resolving dependencies, so `connect-src` permits
 `https://pypi.org` and wheel downloads from `https://files.pythonhosted.org`.
 These are connection sources rather than script sources: wheels are package

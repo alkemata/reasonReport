@@ -9,6 +9,17 @@ from scripts.externalize_inline_scripts import externalize
 
 
 class JupyterLiteCspBuildTest(unittest.TestCase):
+    def test_base_compose_declares_documented_mcp_service(self):
+        compose = Path('docker-compose.yml').read_text()
+        self.assertRegex(compose, r'(?m)^  mcp:\s*$')
+        self.assertIn('command: python -m reasonreport_mcp.server', compose)
+        self.assertIn('MCP_PUBLIC_URL=', compose)
+        self.assertEqual(
+            compose.count('MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/flaskdb}'),
+            2,
+        )
+        self.assertNotIn('MONGO_INITDB_ROOT_USERNAME', compose)
+
     def test_development_compose_enables_both_reloaders(self):
         base_compose = Path('docker-compose.yml').read_text()
         compose = Path('docker-compose.dev.yml').read_text()
@@ -27,12 +38,16 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
     def test_docker_build_bundles_pyodide_for_same_origin_loading(self):
         dockerfile = Path('Dockerfile').read_text(encoding='utf-8')
 
-        self.assertIn('pyodide-0.27.6.tar.bz2', dockerfile)
-        self.assertIn('/opt/jupyterlite/static/pyodide/pyodide.js', dockerfile)
-        self.assertIn('"pyodideUrl": "./static/pyodide/pyodide.js"', dockerfile)
+        self.assertIn('ARG PYODIDE_VERSION=0.27.6', dockerfile)
+        self.assertIn('--retry 5', dockerfile)
+        self.assertIn('--pyodide=/build/pyodide.tar.bz2', dockerfile)
+        validator = Path('jupyterlite-content/validate_build.py').read_text(encoding='utf-8')
+        self.assertIn('static/pyodide/pyodide.js', validator)
+        self.assertIn('"./static/pyodide/pyodide.js"', validator)
         self.assertIn('comm==0.2.2', dockerfile)
         self.assertIn('--piplite-wheels=/build/piplite-wheels', dockerfile)
-        self.assertIn('/opt/jupyterlite/api/pypi/all.json', dockerfile)
+        self.assertIn('root / "pypi/all.json"', validator)
+        self.assertIn('@jupyterlite/pyodide-kernel-extension:kernel', validator)
 
     def test_externalizes_only_executable_inline_scripts(self):
         with tempfile.TemporaryDirectory() as directory:

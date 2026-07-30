@@ -87,6 +87,20 @@ COLLECTION_VALIDATORS = {
         "$jsonSchema": {"bsonType": "object", "required": ["user_id", "expires_at"],
                         "properties": {"user_id": _object_id(), "expires_at": {"bsonType": "date"}}}
     },
+    "mcp_tokens": {
+        "$jsonSchema": {
+            "bsonType": "object",
+            "required": ["token_hash", "user_id", "name", "scopes", "created_at", "expires_at"],
+            "properties": {
+                "token_hash": {"bsonType": "string"},
+                "user_id": _object_id(),
+                "name": {"bsonType": "string"},
+                "scopes": {"bsonType": "array", "items": {"bsonType": "string"}},
+                "created_at": {"bsonType": "date"},
+                "expires_at": {"bsonType": "date"},
+            },
+        }
+    },
 }
 
 
@@ -113,6 +127,11 @@ INDEXES = {
     ],
     "editor_launches": [
         ([('expires_at', ASCENDING)], {"name": "ttl_editor_launch", "expireAfterSeconds": 0}),
+    ],
+    "mcp_tokens": [
+        ([('token_hash', ASCENDING)], {"name": "uq_mcp_token_hash", "unique": True}),
+        ([('user_id', ASCENDING), ('created_at', DESCENDING)], {"name": "ix_mcp_user_created"}),
+        ([('expires_at', ASCENDING)], {"name": "ttl_mcp_token_expiry", "expireAfterSeconds": 0}),
     ],
 }
 
