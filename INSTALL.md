@@ -145,8 +145,10 @@ did not describe this standalone extension package.
 
 The build downloads Python and JavaScript packages, compiles
 `flask_extension/src/index.ts`, installs the resulting federated extension, and
-runs `jupyter lite build`. Internet access to PyPI and the Yarn/npm registries is
-therefore required during this step.
+runs `jupyter lite build`. Internet access to PyPI, GitHub Releases, and the
+Yarn/npm registries is therefore required during this step. The Pyodide download
+is a separate, retried image layer, so a CDN failure is reported directly and a
+successful download is reused by subsequent builds.
 
 The build also seeds the JupyterLite contents service from
 `jupyterlite-content/` and verifies that `api/contents/all.json` exists. It

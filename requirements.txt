@@ -12,6 +12,8 @@ python-slugify
 PyJWT
 werkzeug
 flask-debugtoolbar
+mcp>=1.12,<2
+pymongo>=4.6,<5
 jupyterlab>=4.2,<5
-jupyterlite-core>=0.4,<0.7
-jupyterlite-pyodide-kernel>=0.4,<0.7
+jupyterlite-core==0.6.4
+jupyterlite-pyodide-kernel==0.6.1
