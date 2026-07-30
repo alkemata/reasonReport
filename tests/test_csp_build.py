@@ -14,6 +14,11 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         self.assertRegex(compose, r'(?m)^  mcp:\s*$')
         self.assertIn('command: python -m reasonreport_mcp.server', compose)
         self.assertIn('MCP_PUBLIC_URL=', compose)
+        self.assertEqual(
+            compose.count('MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/flaskdb}'),
+            2,
+        )
+        self.assertNotIn('MONGO_INITDB_ROOT_USERNAME', compose)
 
     def test_development_compose_enables_both_reloaders(self):
         base_compose = Path('docker-compose.yml').read_text()

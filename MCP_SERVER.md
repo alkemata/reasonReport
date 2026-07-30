@@ -15,8 +15,10 @@ server-owned `author_id`, timestamps, or revision.
   `documents:delete` scopes and can be revoked immediately.
 - Reads enforce private/public sharing rules. Writes and deletes require
   ownership and an expected revision, preventing lost updates.
-- Mutations create audit events. MongoDB is not exposed on a host port and
-  requires credentials.
+- Mutations create audit events. MongoDB is not exposed on a host port and is
+  reachable only by services on the private Compose network. An authenticated
+  external MongoDB URI can be supplied when database-level authentication is
+  required.
 
 Treat bearer tokens like passwords. Give each connector its own short-lived,
 least-privilege token, rotate the pepper only as an emergency global revocation,
@@ -28,8 +30,6 @@ Create `.env` with strong, distinct values (alongside the existing Flask
 secrets):
 
 ```dotenv
-MONGO_ROOT_USERNAME=reasonreport
-MONGO_ROOT_PASSWORD=<openssl-rand-hex-32>
 MCP_TOKEN_PEPPER=<openssl-rand-hex-32>
 MCP_PUBLIC_URL=https://rr.example.com/mcp
 MCP_ISSUER_URL=https://rr.example.com/mcp
@@ -58,10 +58,31 @@ docker-compose up -d mcp
 If `mcp` is absent from that output, update the checkout containing
 `docker-compose.yml` before running the token-management commands below.
 
-Mongo authentication is initialized only for a fresh data volume. For an
-existing unauthenticated volume, follow MongoDB's documented access-control
-migration procedure before deploying this Compose change; do not delete the
-volume.
+The default `MONGO_URI=mongodb://mongo:27017/flaskdb` remains compatible with
+existing Compose volumes. MongoDB has no published host port, so it is isolated
+to the private Compose network. To use a separately configured authenticated
+MongoDB deployment, set its complete URI explicitly, including `authSource`:
+
+```dotenv
+MONGO_URI=mongodb://reasonreport:PASSWORD@mongo:27017/flaskdb?authSource=admin
+```
+
+Do not add credentials to that URI until the corresponding MongoDB user exists.
+Setting `MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` does not
+retroactively create a user in an existing non-empty Mongo volume.
+
+### Recover from `Authentication failed` after upgrading
+
+If the volume predates MongoDB authentication and the application exits with
+error code 18, remove `MONGO_ROOT_USERNAME`, `MONGO_ROOT_PASSWORD`, and any
+credential-bearing `MONGO_URI` from `.env`, then recreate the containers:
+
+```bash
+docker-compose up -d --force-recreate mongo flaskapprr mcp
+docker-compose logs -f flaskapprr mcp
+```
+
+This reuses the existing `mongo-data` volume; do **not** run `down -v`.
 
 ## Issue and revoke connector credentials
 

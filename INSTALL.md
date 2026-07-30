@@ -92,6 +92,14 @@ JWT_COOKIE_SECURE=true
 
 Never commit real production secrets.
 
+The default MongoDB URI is intentionally credential-free for compatibility
+with existing Compose volumes. MongoDB is not published to the host and is
+available only on the private Compose network. If you have created a MongoDB
+user, replace `MONGO_URI` with its authenticated URI. Do not merely add
+`MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` to an existing
+non-empty volume: the official Mongo image only creates that root user while
+initializing a new database directory.
+
 ## 5. Prepare MongoDB storage
 
 The Compose stack stores `/data/db` in its managed `mongo-data` Docker volume.
