@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY requirements.txt requirements.txt
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y nodejs npm \
+    && apt-get install --no-install-recommends -y ca-certificates curl nodejs npm \
     && rm -rf /var/lib/apt/lists/* \
     && pip install --no-cache-dir -r requirements.txt
 
@@ -20,16 +20,20 @@ COPY jupyterlite-content /build/jupyterlite-content
 RUN mkdir -p /build/piplite-wheels \
     && pip download --no-deps --only-binary=:all: \
         --dest=/build/piplite-wheels comm==0.2.2
-RUN jupyter lite build \
+# Download the large runtime independently so transient CDN failures are retried
+# and are not hidden inside the JupyterLite build step's combined exit status.
+ARG PYODIDE_VERSION=0.27.6
+RUN curl --fail --location --show-error --silent \
+    --retry 5 --retry-delay 5 --retry-all-errors \
+    --output /build/pyodide.tar.bz2 \
+    "https://github.com/pyodide/pyodide/releases/download/${PYODIDE_VERSION}/pyodide-${PYODIDE_VERSION}.tar.bz2" \
+    && test -s /build/pyodide.tar.bz2
+RUN jupyter lite build --log-level=INFO \
     --contents=/build/jupyterlite-content \
-    --pyodide=https://github.com/pyodide/pyodide/releases/download/0.27.6/pyodide-0.27.6.tar.bz2 \
+    --pyodide=/build/pyodide.tar.bz2 \
     --piplite-wheels=/build/piplite-wheels \
-    --output-dir=/opt/jupyterlite \
-    && test -f /opt/jupyterlite/api/contents/all.json \
-    && test -f /opt/jupyterlite/static/pyodide/pyodide.js \
-    && test -f /opt/jupyterlite/api/pypi/all.json \
-    && grep -q 'comm-0.2.2-py3-none-any.whl' /opt/jupyterlite/api/pypi/all.json \
-    && grep -q '"pyodideUrl": "./static/pyodide/pyodide.js"' /opt/jupyterlite/jupyter-lite.json
+    --output-dir=/opt/jupyterlite
+RUN python /build/jupyterlite-content/validate_build.py /opt/jupyterlite
 COPY scripts/externalize_inline_scripts.py /usr/local/bin/externalize-inline-scripts
 COPY scripts/migrate_mongodb_schema.py /usr/local/bin/migrate-reasonreport-schema
 COPY scripts/manage_mcp_token.py /usr/local/bin/manage-reasonreport-mcp-token
