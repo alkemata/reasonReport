@@ -156,7 +156,7 @@ downloads Pyodide 0.27.6 while building the image and serves the runtime from
 `/jupyterlite/static/pyodide/`. Browsers therefore do not need to connect to an
 external CDN for the Python runtime.
 The pure-Python `comm` dependency is also downloaded at image-build time and
-added to JupyterLite's local piplite index. The piplite/micropip resolver can
+added to JupyterLite's local `/pypi/all.json` index. The piplite/micropip resolver can
 still consult PyPI while resolving dependencies, so `connect-src` permits
 `https://pypi.org` and wheel downloads from `https://files.pythonhosted.org`.
 These are connection sources rather than script sources: wheels are package

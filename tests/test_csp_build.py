@@ -41,7 +41,8 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         self.assertIn('"./static/pyodide/pyodide.js"', validator)
         self.assertIn('comm==0.2.2', dockerfile)
         self.assertIn('--piplite-wheels=/build/piplite-wheels', dockerfile)
-        self.assertIn('api/pypi/all.json', validator)
+        self.assertIn('root / "pypi/all.json"', validator)
+        self.assertIn('@jupyterlite/pyodide-kernel-extension:kernel', validator)
 
     def test_externalizes_only_executable_inline_scripts(self):
         with tempfile.TemporaryDirectory() as directory:
