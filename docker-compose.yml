@@ -7,7 +7,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
-      MONGO_DATABASE: ${MONGO_DATABASE:-flaskdb}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-flaskdb}
     volumes:
       - ./mongo-config:/etc/mongo-config:ro
       - mongo-data:/data/db
