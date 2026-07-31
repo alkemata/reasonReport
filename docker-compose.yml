@@ -10,7 +10,7 @@ services:
       MONGO_INITDB_DATABASE: ${MONGO_DATABASE:-flaskdb}
     volumes:
       - ./mongo-config:/etc/mongo-config:ro
-      - mongo-data:/data/db
+      - ./mongo-data:/data/db
       - ./mongo-logs:/var/log/mongodb:rw
     command: ["mongod", "--config", "/etc/mongo-config/mongod.conf"]
     networks:
