@@ -22,7 +22,10 @@ For an existing database, assign roles once after upgrading (adjust usernames
 as appropriate):
 
 ```bash
-docker-compose exec mongo mongosh flaskdb --eval \
+docker-compose exec mongo sh -c 'exec mongosh "$MONGO_DATABASE" \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin --eval "$1"' sh \
   'db.users.updateMany({role: {$exists: false}}, {$set: {role: "user"}}); db.users.updateOne({username: "admin"}, {$set: {role: "admin"}})'
 ```
 

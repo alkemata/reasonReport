@@ -1,147 +1,90 @@
-# docker-compose.yml
-version: '3'
+version: "3.7"
 
 services:
-
   mongo:
-    image: mongo:latest
+    image: mongo:8.0
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}
+      MONGO_DATABASE: ${MONGO_DATABASE:-flaskdb}
     volumes:
-      - ./mongo-config:/etc/mongo-config
+      - ./mongo-config:/etc/mongo-config:ro
       - mongo-data:/data/db
       - ./mongo-logs:/var/log/mongodb:rw
-    command: mongod --config /etc/mongo-config/mongod.conf
+    command: ["mongod", "--config", "/etc/mongo-config/mongod.conf"]
     networks:
-      - default
-    
+      - backend
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          mongosh --quiet --username "$$MONGO_INITDB_ROOT_USERNAME"
+          --password "$$MONGO_INITDB_ROOT_PASSWORD" --authenticationDatabase admin
+          --eval 'quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)'
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   flaskapprr:
     build: .
+    restart: unless-stopped
     volumes:
       - ./app:/app/
+    depends_on:
+      - mongo
+    environment:
+      PYTHONUNBUFFERED: "1"
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongo:27017/${MONGO_DATABASE:-flaskdb}?authSource=admin
+      JUPYTERLITE_PATH: /opt/jupyterlite
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY in .env}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?set JWT_SECRET_KEY in .env}
+      JWT_COOKIE_SECURE: ${JWT_COOKIE_SECURE:-true}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      INDEX_PAGE_NAME: ${INDEX_PAGE_NAME:-mainpage}
+    networks:
+      - backend
+      - web
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
       traefik.docker.network: traefik_web
       traefik.http.routers.flaskapprr.entrypoints: websecure
-      traefik.http.routers.flaskapprr.rule: 'Host(`rr.alkemata.com`)'
-      traefik.http.services.flaskapprr.loadbalancer.server.port: 5000
-    networks:
-      - traefik_web
-      - default
-    depends_on:
-      - mongo
-    environment:
-      - PYTHONUNBUFFERED=1
-      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/flaskdb}
-      - JUPYTERLITE_PATH=/opt/jupyterlite
-      - SECRET_KEY=${SECRET_KEY:-development-flask-key-change-me-32}
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-development-jwt-key-change-me-32}
-      - JWT_COOKIE_SECURE=${JWT_COOKIE_SECURE:-true}
-      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
-      - INDEX_PAGE_NAME=${INDEX_PAGE_NAME:-mainpage}
+      traefik.http.routers.flaskapprr.rule: Host(`${APP_HOSTNAME:?set APP_HOSTNAME in .env}`)
+      traefik.http.routers.flaskapprr.tls: "true"
+      traefik.http.services.flaskapprr.loadbalancer.server.port: "5000"
 
   # Remote Streamable HTTP MCP server documented in MCP_SERVER.md.
-  # Use this exact service name with `docker-compose run --rm mcp ...`.
   mcp:
     build: .
+    restart: unless-stopped
     working_dir: /app
     command: python -m reasonreport_mcp.server
-    restart: unless-stopped
     depends_on:
       - mongo
-    networks:
-      - traefik_web
-      - default
     environment:
-      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/flaskdb}
-      - MCP_PUBLIC_URL=${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL, for example https://rr.example.com/mcp}
-      - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
-      - MCP_TOKEN_PEPPER=${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
+      MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD in .env}@mongo:27017/${MONGO_DATABASE:-flaskdb}?authSource=admin
+      MCP_PUBLIC_URL: ${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL in .env}
+      MCP_ISSUER_URL: ${MCP_ISSUER_URL:-}
+      MCP_TOKEN_PEPPER: ${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
+    networks:
+      - backend
+      - web
     labels:
-      traefik.enable: true
+      traefik.enable: "true"
       traefik.docker.network: traefik_web
       traefik.http.routers.reasonreport-mcp.entrypoints: websecure
-      traefik.http.routers.reasonreport-mcp.rule: 'Host(`rr.alkemata.com`) && PathPrefix(`/mcp`)'
-      traefik.http.routers.reasonreport-mcp.priority: 100
-      traefik.http.services.reasonreport-mcp.loadbalancer.server.port: 8000
-
-  # Remote Streamable HTTP MCP server documented in MCP_SERVER.md.
-  # Use this exact service name with `docker-compose run --rm mcp ...`.
-  mcp:
-    build: .
-    working_dir: /app
-    command: python -m reasonreport_mcp.server
-    restart: unless-stopped
-    depends_on:
-      - mongo
-    networks:
-      - traefik_web
-      - default
-    environment:
-      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongo:27017/flaskdb?authSource=admin
-      - MCP_PUBLIC_URL=${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL, for example https://rr.example.com/mcp}
-      - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
-      - MCP_TOKEN_PEPPER=${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
-    labels:
-      traefik.enable: true
-      traefik.docker.network: traefik_web
-      traefik.http.routers.reasonreport-mcp.entrypoints: websecure
-      traefik.http.routers.reasonreport-mcp.rule: 'Host(`rr.alkemata.com`) && PathPrefix(`/mcp`)'
-      traefik.http.routers.reasonreport-mcp.priority: 100
-      traefik.http.services.reasonreport-mcp.loadbalancer.server.port: 8000
-
-  # Remote Streamable HTTP MCP server documented in MCP_SERVER.md.
-  # Use this exact service name with `docker-compose run --rm mcp ...`.
-  mcp:
-    build: .
-    working_dir: /app
-    command: python -m reasonreport_mcp.server
-    restart: unless-stopped
-    depends_on:
-      - mongo
-    networks:
-      - traefik_web
-      - default
-    environment:
-      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongo:27017/flaskdb?authSource=admin
-      - MCP_PUBLIC_URL=${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL, for example https://rr.example.com/mcp}
-      - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
-      - MCP_TOKEN_PEPPER=${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
-    labels:
-      traefik.enable: true
-      traefik.docker.network: traefik_web
-      traefik.http.routers.reasonreport-mcp.entrypoints: websecure
-      traefik.http.routers.reasonreport-mcp.rule: 'Host(`rr.alkemata.com`) && PathPrefix(`/mcp`)'
-      traefik.http.routers.reasonreport-mcp.priority: 100
-      traefik.http.services.reasonreport-mcp.loadbalancer.server.port: 8000
-
-  # Remote Streamable HTTP MCP server documented in MCP_SERVER.md.
-  # Use this exact service name with `docker-compose run --rm mcp ...`.
-  mcp:
-    build: .
-    working_dir: /app
-    command: python -m reasonreport_mcp.server
-    restart: unless-stopped
-    depends_on:
-      - mongo
-    networks:
-      - traefik_web
-      - default
-    environment:
-      - MONGO_URI=mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME}:${MONGO_ROOT_PASSWORD:?set MONGO_ROOT_PASSWORD}@mongo:27017/flaskdb?authSource=admin
-      - MCP_PUBLIC_URL=${MCP_PUBLIC_URL:?set MCP_PUBLIC_URL, for example https://rr.example.com/mcp}
-      - MCP_ISSUER_URL=${MCP_ISSUER_URL:-}
-      - MCP_TOKEN_PEPPER=${MCP_TOKEN_PEPPER:?set MCP_TOKEN_PEPPER in .env}
-    labels:
-      traefik.enable: true
-      traefik.docker.network: traefik_web
-      traefik.http.routers.reasonreport-mcp.entrypoints: websecure
-      traefik.http.routers.reasonreport-mcp.rule: 'Host(`rr.alkemata.com`) && PathPrefix(`/mcp`)'
-      traefik.http.routers.reasonreport-mcp.priority: 100
-      traefik.http.services.reasonreport-mcp.loadbalancer.server.port: 8000
-
+      traefik.http.routers.reasonreport-mcp.rule: Host(`${APP_HOSTNAME:?set APP_HOSTNAME in .env}`) && PathPrefix(`/mcp`)
+      traefik.http.routers.reasonreport-mcp.priority: "100"
+      traefik.http.routers.reasonreport-mcp.tls: "true"
+      traefik.http.services.reasonreport-mcp.loadbalancer.server.port: "8000"
 
 networks:
-  traefik_web:
+  backend:
+    internal: true
+  web:
     external: true
+    name: traefik_web
 
 volumes:
   mongo-data:

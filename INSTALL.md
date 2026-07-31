@@ -5,8 +5,9 @@ builds the bundled JupyterLab extension and a static JupyterLite site containing
 the Pyodide kernel.
 
 The checked-in Compose configuration targets an HTTPS deployment behind an
-existing Traefik instance at `rr.alkemata.com`. See [Local development](#local-development)
-if you do not use Traefik.
+existing Traefik instance. The public hostname and every credential are set in
+a local `.env` file. See [Local development](#local-development) if you do not
+use Traefik.
 
 ## 1. Prerequisites
 
@@ -40,65 +41,82 @@ git fetch --all --tags
 git checkout <branch-or-tag>
 ```
 
-## 3. Configure the hostname and HTTPS proxy
+## 3. Create the installation configuration
 
-The default Traefik router matches `rr.alkemata.com` and uses the `websecure`
-entrypoint. If you use another hostname, change the
-`traefik.http.routers.flaskapprr.rule` label in `docker-compose.yml` and point
-that hostname's DNS record at the Docker host.
-
-The Compose file does not start Traefik. Traefik must already:
-
-1. expose ports 80 and 443;
-2. define the `websecure` entrypoint;
-3. provide a TLS certificate;
-4. be connected to the external `traefik_web` Docker network.
-
-Create the network if it does not exist:
+All installation-specific values live in the repository root's `.env` file.
+Docker Compose reads this file automatically; it is ignored by Git so that
+credentials are not committed. Create it from the documented template:
 
 ```bash
-docker network inspect traefik_web >/dev/null 2>&1 \
-  || docker network create traefik_web
+cp .env.example .env
 ```
 
-If Traefik is already running but is not attached to it:
+Open `.env` and replace **every** `CHANGE_ME` value. At minimum, configure:
+
+| Variable | Purpose |
+| --- | --- |
+| `APP_HOSTNAME` | Public hostname routed by Traefik, without `https://` or a path. |
+| `MONGO_ROOT_USERNAME` | MongoDB administrator used by MongoDB, Flask, MCP, health checks, and maintenance scripts. |
+| `MONGO_ROOT_PASSWORD` | URL-safe MongoDB password; generate with `openssl rand -hex 32`. |
+| `MONGO_DATABASE` | Application database name; normally `flaskdb`. |
+| `SECRET_KEY` | Flask session secret; generate independently with `openssl rand -hex 32`. |
+| `JWT_SECRET_KEY` | Authentication-token secret; generate independently. |
+| `MCP_PUBLIC_URL` | Full external MCP URL, normally `https://<APP_HOSTNAME>/mcp`. |
+| `MCP_TOKEN_PEPPER` | Secret used to hash MCP tokens; generate independently. |
+
+`JWT_COOKIE_SECURE=true` is required behind production HTTPS. `ADMIN_USERNAME`,
+`INDEX_PAGE_NAME`, and the optional `MCP_ISSUER_URL` are also explained in the
+template. Do not define `MONGO_URI` yourself: Compose constructs exactly the
+same authenticated URI for both `flaskapprr` and `mcp` from the Mongo settings.
+
+Check interpolation and the resulting service model before starting anything:
 
 ```bash
-docker network connect traefik_web <traefik-container-name>
+docker-compose config --quiet
 ```
 
-Do not run that command when Traefik's own Compose file already attaches the
-container to the network.
+The rendered output of `docker-compose config` contains secrets; do not paste
+it into tickets or commit it. The checked-in file deliberately has no fallback
+production secrets and reports a missing required setting immediately.
 
-## 4. Configure production secrets
+## 4. Connect to the existing Traefik deployment
 
-Before exposing the application publicly, generate strong Flask and JWT secrets:
+ReasonReport does not start Traefik. It joins the external Docker network named
+`traefik_web`, which is the network created by the Traefik Compose configuration
+in the deployment (`web: {name: traefik_web}`). The application labels select
+the `websecure` entrypoint, enable TLS, route `APP_HOSTNAME` to Flask port 5000,
+and give `/mcp` a higher-priority route to the MCP service on port 8000.
+MongoDB joins only the internal `backend` network and is never exposed through
+Traefik or published on the host.
+
+Start the supplied Traefik stack first. Confirm that its network exists:
 
 ```bash
-openssl rand -hex 32
-openssl rand -hex 32
+docker network inspect traefik_web
 ```
 
-Put them in a local, uncommitted `.env` file. The Compose service passes these
-environment-backed settings to Flask:
+If the Traefik stack has not created it yet, create it once, then start/recreate
+Traefik so its `reverse_proxy` service joins that network:
 
-```dotenv
-SECRET_KEY=<first-generated-value>
-JWT_SECRET_KEY=<second-generated-value>
-MONGO_URI=mongodb://mongo:27017/flaskdb
-JUPYTERLITE_PATH=/opt/jupyterlite
-JWT_COOKIE_SECURE=true
+```bash
+docker network create traefik_web
+docker-compose -f /path/to/traefik/docker-compose.yml up -d
 ```
 
-Never commit real production secrets.
+The Traefik static configuration must define an entrypoint named `websecure` on
+port 443 and arrange certificate issuance/loading. Point the DNS record for
+`APP_HOSTNAME` to this host. No `ports:` entry should be added to ReasonReport
+for production: Traefik reaches the containers over `traefik_web`.
 
-The default MongoDB URI is intentionally credential-free for compatibility
-with existing Compose volumes. MongoDB is not published to the host and is
-available only on the private Compose network. If you have created a MongoDB
-user, replace `MONGO_URI` with its authenticated URI. Do not merely add
-`MONGO_INITDB_ROOT_USERNAME` and `MONGO_INITDB_ROOT_PASSWORD` to an existing
-non-empty volume: the official Mongo image only creates that root user while
-initializing a new database directory.
+### Existing MongoDB volumes
+
+The official Mongo image creates `MONGO_INITDB_ROOT_USERNAME` and
+`MONGO_INITDB_ROOT_PASSWORD` only when `/data/db` is empty. If this deployment
+already has a credential-free `mongo-data` volume, back it up before upgrading.
+Either create the configured administrator in that database before enabling
+authentication, or restore the backup into a newly initialized volume. Merely
+adding credentials to `.env` cannot create a user in an existing non-empty
+volume.
 
 ## 5. Prepare MongoDB storage
 
@@ -127,9 +145,16 @@ create a backup before changing Compose configuration, start the new stack,
 and restore it into the named volume:
 
 ```bash
-docker-compose exec -T mongo mongodump --archive --db flaskdb > flaskdb.archive
+docker-compose exec -T mongo sh -c 'exec mongodump \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin --db "$MONGO_DATABASE" --archive' \
+  > flaskdb.archive
 docker-compose up -d mongo
-docker-compose exec -T mongo mongorestore --archive --drop < flaskdb.archive
+docker-compose exec -T mongo sh -c 'exec mongorestore \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin --archive --drop' < flaskdb.archive
 ```
 
 ## 6. Build the application and JupyterLite
@@ -203,7 +228,11 @@ docker-compose logs -f mongo
 Once MongoDB is ready, stop following the log with `Ctrl+C` and run:
 
 ```bash
-docker-compose exec mongo mongosh --eval 'db.runCommand({ ping: 1 })'
+docker-compose exec mongo sh -c 'mongosh --quiet \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin \
+  --eval '"'"'db.runCommand({ ping: 1 })'"'"''
 ```
 
 The result should contain `ok: 1`.
@@ -263,12 +292,12 @@ interactive debugging, and the source watcher consumes extra resources.
 
 ## 9. Verify the HTTP endpoints
 
-Using the default hostname:
+Using the `APP_HOSTNAME` configured in `.env` (the examples below use `rr.example.com`):
 
 ```bash
-curl -I https://rr.alkemata.com/register
-curl -I https://rr.alkemata.com/login
-curl -I https://rr.alkemata.com/jupyterlite/
+curl -I https://rr.example.com/register
+curl -I https://rr.example.com/login
+curl -I https://rr.example.com/jupyterlite/
 ```
 
 Confirm that the generated JupyterLite site exists in the application image:
@@ -281,7 +310,7 @@ docker-compose exec flaskapprr \
 Check the effective Content Security Policy:
 
 ```bash
-curl -sSI https://rr.alkemata.com/jupyterlite/ \
+curl -sSI https://rr.example.com/jupyterlite/ \
   | grep -i '^content-security-policy:'
 ```
 
@@ -295,7 +324,7 @@ together, so Flask cannot loosen a stricter policy added by the proxy.
 Also inspect the policy embedded in the generated JupyterLite HTML:
 
 ```bash
-curl -s https://rr.alkemata.com/jupyterlite/ \
+curl -s https://rr.example.com/jupyterlite/ \
   | grep -i 'content-security-policy'
 ```
 
@@ -314,7 +343,7 @@ docker-compose logs --tail=200 flaskapprr
 
 ## 10. Exercise the notebook workflow
 
-1. Open `https://rr.alkemata.com/register` and create an account.
+1. Open `https://rr.example.com/register` and create an account.
 2. Registration authenticates the new account and redirects directly to its
    initial notebook editor.
 3. To create another notebook, choose **Create Notebook → Blank**.
@@ -330,14 +359,20 @@ docker-compose logs --tail=200 flaskapprr
 Inspect stored notebook records when troubleshooting:
 
 ```bash
-docker-compose exec mongo mongosh flaskdb --eval \
+docker-compose exec mongo sh -c 'exec mongosh "$MONGO_DATABASE" \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin --eval "$1"' sh \
   'db.notebooks.find({}, {title: 1, slug: 1, author: 1, is_public: 1}).pretty()'
 ```
 
 Inspect users with:
 
 ```bash
-docker-compose exec mongo mongosh flaskdb --eval \
+docker-compose exec mongo sh -c 'exec mongosh "$MONGO_DATABASE" \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin --eval "$1"' sh \
   'db.users.find({}, {username: 1, role: 1}).pretty()'
 ```
 
@@ -363,11 +398,11 @@ Verify login, the current-user endpoint, and logout with a cookie jar:
 ```bash
 curl -k -c /tmp/reasonreport-cookies.txt -X POST \
   -d 'username=<username>&password=<password>' \
-  'https://rr.alkemata.com/login?next=/'
+  'https://rr.example.com/login?next=/'
 curl -k -b /tmp/reasonreport-cookies.txt \
-  'https://rr.alkemata.com/api/me'
+  'https://rr.example.com/api/me'
 curl -k -b /tmp/reasonreport-cookies.txt -c /tmp/reasonreport-cookies.txt \
-  -X POST 'https://rr.alkemata.com/api/logout'
+  -X POST 'https://rr.example.com/api/logout'
 ```
 
 If the browser returns to `/login`, inspect the form POST in developer tools.
@@ -442,7 +477,10 @@ Back up MongoDB:
 
 ```bash
 mkdir -p backups
-docker-compose exec -T mongo mongodump --archive --db flaskdb \
+docker-compose exec -T mongo sh -c 'exec mongodump \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin --db "$MONGO_DATABASE" --archive' \
   > "backups/flaskdb-$(date +%Y%m%d-%H%M%S).archive"
 ```
 
