@@ -9,3 +9,6 @@ mongo-logs/
 
 # Local backups
 backups/
+
+# Local installation settings and secrets (copy from .env.example)
+.env

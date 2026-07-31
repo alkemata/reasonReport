@@ -13,20 +13,23 @@ class JupyterLiteCspBuildTest(unittest.TestCase):
         compose = Path('docker-compose.yml').read_text()
         self.assertRegex(compose, r'(?m)^  mcp:\s*$')
         self.assertIn('command: python -m reasonreport_mcp.server', compose)
-        self.assertIn('MCP_PUBLIC_URL=', compose)
+        self.assertIn('MCP_PUBLIC_URL:', compose)
         self.assertEqual(
-            compose.count('MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/flaskdb}'),
+            compose.count(
+                'MONGO_URI: mongodb://${MONGO_ROOT_USERNAME:?set MONGO_ROOT_USERNAME in .env}:'
+            ),
             2,
         )
-        self.assertNotIn('MONGO_INITDB_ROOT_USERNAME', compose)
+        self.assertIn('MONGO_INITDB_ROOT_USERNAME:', compose)
+        self.assertIn('?authSource=admin', compose)
 
     def test_development_compose_enables_both_reloaders(self):
         base_compose = Path('docker-compose.yml').read_text()
         compose = Path('docker-compose.dev.yml').read_text()
         script = Path('scripts/dev_server.sh').read_text()
 
-        self.assertIn("version: '3'", base_compose)
-        self.assertIn("version: '3'", compose)
+        self.assertIn('version: "3.7"', base_compose)
+        self.assertIn('version: "3.7"', compose)
         self.assertIn('FLASK_DEBUG: "true"', compose)
         self.assertNotIn('./app:/app', compose)
         self.assertEqual(base_compose.count('./app:/app'), 1)
