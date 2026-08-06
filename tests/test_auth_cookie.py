@@ -19,8 +19,26 @@ class AuthenticationCookieTest(unittest.TestCase):
             JWT_ACCESS_TOKEN_EXPIRES=86400,
             ADMIN_USERNAME='site-owner',
             INDEX_PAGE_NAME='front-page',
+            REGISTRATION_ENABLED=True,
         )
         self.client = reasonreport_app.app.test_client()
+
+    def test_registration_can_be_disabled_for_incident_response(self):
+        reasonreport_app.app.config['REGISTRATION_ENABLED'] = False
+
+        page_response = self.client.get('/register')
+        api_response = self.client.post('/api/register', json={
+            'username': 'attacker',
+            'password': 'secret12',
+        })
+
+        self.assertEqual(page_response.status_code, 403)
+        self.assertIn(b'Registration is temporarily disabled.', page_response.data)
+        self.assertEqual(api_response.status_code, 403)
+        self.assertEqual(
+            api_response.get_json()['message'],
+            'Registration is temporarily disabled',
+        )
 
     def test_generated_token_uses_configured_jwt_secret(self):
         token = generate_token('user-id')

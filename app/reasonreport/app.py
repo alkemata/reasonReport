@@ -20,9 +20,11 @@ from flask_debugtoolbar import DebugToolbarExtension
 import logging
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
 app.config.from_object(Config)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.secret_key = Config.SECRET_KEY
 app.debug = Config.DEBUG
 app.logger.setLevel(logging.DEBUG if app.debug else logging.INFO)
@@ -43,6 +45,10 @@ def add_security_headers(response):
     return response
 
 # API Routes
+UserRegister.post = limiter.limit(
+    app.config['REGISTRATION_RATE_LIMIT']
+)(UserRegister.post)
+UserLogin.post = limiter.limit(app.config['LOGIN_RATE_LIMIT'])(UserLogin.post)
 api.add_resource(UserRegister, '/api/register')
 api.add_resource(UserLogin, '/api/login')
 api.add_resource(UserLogout, '/api/logout')
@@ -130,6 +136,7 @@ def index():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit(lambda: app.config['LOGIN_RATE_LIMIT'], methods=['POST'])
 def login():
     next_page = auth_return_url()
     if request.method == 'GET' and get_user_info_from_token()['is_authenticated']:
@@ -150,9 +157,13 @@ def login():
     return render_template('login.html', next_page=next_page)
 
 @app.route('/register', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
+@limiter.limit(lambda: app.config['REGISTRATION_RATE_LIMIT'], methods=['POST'])
 def register():
     next_page = auth_return_url()
+    if not app.config['REGISTRATION_ENABLED']:
+        return render_template(
+            'error.html', error='Registration is temporarily disabled.'
+        ), 403
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')

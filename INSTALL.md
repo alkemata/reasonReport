@@ -461,6 +461,61 @@ Follow all logs:
 docker-compose logs -f
 ```
 
+### Diagnose repeated login or registration requests
+
+A page that stays pending is not, by itself, evidence of a full database. First
+check container health and resource usage, then inspect recent application and
+proxy access logs (replace `reverse_proxy` with the Traefik service name):
+
+```bash
+docker-compose ps
+docker stats --no-stream
+docker-compose logs --since=30m flaskapprr mongo
+docker-compose -f /path/to/traefik/docker-compose.yml logs --since=30m reverse_proxy \
+  | grep -E '(/login|/register|/api/login|/api/register)'
+```
+
+Count source addresses and response codes in the access log. A high request
+rate, many source addresses, repeated usernames, or many `401`/`429` responses
+can indicate credential stuffing or automated registration. Do not infer an
+attack only from browser requests: the browser developer tools **Network** tab
+shows whether a request is pending, rejected with `429`, or failing with `5xx`.
+
+MongoDB status, logical database size, collection counts, and host disk usage
+can be checked without publishing MongoDB's port:
+
+```bash
+docker-compose exec -T mongo sh -c 'exec mongosh --quiet \
+  --username "$MONGO_INITDB_ROOT_USERNAME" \
+  --password "$MONGO_INITDB_ROOT_PASSWORD" \
+  --authenticationDatabase admin "$MONGO_DATABASE" \
+  --eval '\''printjson(db.stats({scale: 1024*1024})); db.getCollectionNames().forEach(n => print(n, db[n].countDocuments({})))'\'''
+du -sh mongo-data mongo-logs
+df -h .
+```
+
+For immediate containment, preserve logs and take the backup below, then stop
+new account creation by setting `REGISTRATION_ENABLED=false` in `.env` and
+recreating the web container:
+
+```bash
+docker-compose up -d --force-recreate flaskapprr
+```
+
+Both HTML and API login/registration POSTs are rate limited. Tune
+`LOGIN_RATE_LIMIT` and `REGISTRATION_RATE_LIMIT` in `.env` (for example,
+`5 per minute`). Rate limiting uses the client address forwarded by the single
+trusted Traefik proxy hop. Do not expose the Flask container directly while
+trusting forwarded headers. The default limiter storage is in-memory and is
+appropriate only for this single-process deployment; configure shared limiter
+storage before adding multiple application workers.
+
+Also block confirmed abusive addresses or countries at Traefik, the host
+firewall, or the upstream CDN/WAF; rotate credentials that may have been
+exposed; invalidate sessions by rotating `JWT_SECRET_KEY` if account takeover
+is suspected; and review/delete unexpected users only after retaining evidence.
+Never publish MongoDB port 27017 as a response to an incident.
+
 Restart Flask:
 
 ```bash

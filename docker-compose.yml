@@ -43,6 +43,10 @@ services:
       JWT_COOKIE_SECURE: ${JWT_COOKIE_SECURE:-true}
       ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
       INDEX_PAGE_NAME: ${INDEX_PAGE_NAME:-mainpage}
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-true}
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-10 per minute}
+      REGISTRATION_RATE_LIMIT: ${REGISTRATION_RATE_LIMIT:-5 per minute}
+      RATELIMIT_STORAGE_URI: ${RATELIMIT_STORAGE_URI:-memory://}
     networks:
       - backend
       - web

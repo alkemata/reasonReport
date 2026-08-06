@@ -12,6 +12,14 @@ class Config:
     JWT_ACCESS_TOKEN_EXPIRES = int(os.environ.get('JWT_ACCESS_TOKEN_EXPIRES', '86400'))
     JUPYTERLITE_PATH = os.environ.get('JUPYTERLITE_PATH', './_output')
     DEBUG = os.environ.get('FLASK_DEBUG', '').lower() in {'1', 'true', 'yes'}
+    REGISTRATION_ENABLED = os.environ.get(
+        'REGISTRATION_ENABLED', 'true'
+    ).lower() in {'1', 'true', 'yes'}
+    LOGIN_RATE_LIMIT = os.environ.get('LOGIN_RATE_LIMIT', '10 per minute')
+    REGISTRATION_RATE_LIMIT = os.environ.get(
+        'REGISTRATION_RATE_LIMIT', '5 per minute'
+    )
+    RATELIMIT_STORAGE_URI = os.environ.get('RATELIMIT_STORAGE_URI', 'memory://')
     CONTENT_SECURITY_POLICY = os.environ.get(
         'CONTENT_SECURITY_POLICY',
         "default-src 'self' data: blob:; "
