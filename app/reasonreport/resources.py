@@ -12,6 +12,8 @@ import logging
 # User Registration
 class UserRegister(Resource):
     def post(self):
+        if not current_app.config['REGISTRATION_ENABLED']:
+            return {'message': 'Registration is temporarily disabled'}, 403
         parser = reqparse.RequestParser()
         parser.add_argument('username', required=True, help="Username cannot be blank!")
         parser.add_argument('password', required=True, help="Password cannot be blank!")
